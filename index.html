@@ -4267,6 +4267,66 @@ function renderObjectifsBar(s) {
   return html;
 }
 
+
+// ===================== PRÉSENCE VALÉRIE =====================
+function savePresence(prenom) {
+  try {
+    fbDB.ref('tercicall/presence/' + prenom.toLowerCase()).set({
+      prenom: prenom,
+      lastSeen: new Date().toISOString(),
+      online: true
+    });
+    fbDB.ref('tercicall/presence/' + prenom.toLowerCase()).onDisconnect().update({online: false, lastSeen: new Date().toISOString()});
+  } catch(e) { console.log('savePresence error:', e); }
+}
+
+function listenValeriePresence() {
+  try {
+    fbDB.ref('tercicall/presence/valerie').on('value', function(snap) {
+      var data = snap.val();
+      var el = document.getElementById('valerie-presence');
+      if(!el) return;
+      el.style.display = 'inline-flex';
+      el.style.alignItems = 'center';
+      el.style.gap = '5px';
+      if(!data) {
+        el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#e53935;display:inline-block;flex-shrink:0"></span><span style="color:#e57373">Valérie hors ligne</span>';
+        return;
+      }
+      var isOnline = data.online === true;
+      var lastSeen = data.lastSeen ? new Date(data.lastSeen) : null;
+      var puceColor = isOnline ? '#43a047' : '#e53935';
+      var textColor = isOnline ? '#a5d6a7' : '#e57373';
+      var label = '';
+      if(isOnline) {
+        label = 'Valérie connectée';
+      } else if(lastSeen) {
+        var now2 = new Date();
+        var hStr = lastSeen.getHours().toString().padStart(2,'0') + ':' + lastSeen.getMinutes().toString().padStart(2,'0');
+        var diffDays = Math.floor((now2 - lastSeen) / 86400000);
+        if(diffDays === 0) {
+          label = 'Valérie — aujourd\'hui à ' + hStr;
+        } else if(diffDays === 1) {
+          label = 'Valérie — hier à ' + hStr;
+        } else {
+          label = 'Valérie — ' + lastSeen.getDate() + '/' + (lastSeen.getMonth()+1) + ' à ' + hStr;
+        }
+      } else {
+        label = 'Valérie hors ligne';
+      }
+      el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:' + puceColor + ';display:inline-block;flex-shrink:0"></span><span style="color:' + textColor + '">' + label + '</span>';
+    });
+  } catch(e) { console.log('listenValeriePresence error:', e); }
+}
+
+function doLogoutWithPresence() {
+  try {
+    if(currentUser) {
+      fbDB.ref('tercicall/presence/' + currentUser.prenom.toLowerCase()).update({online: false, lastSeen: new Date().toISOString()});
+    }
+  } catch(e) {}
+  doLogout();
+}
 </script>
 
 <!-- MODAL OBJECTIFS -->
