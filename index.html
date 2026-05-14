@@ -2420,19 +2420,20 @@ function editContact(ficheId, idx) {
   var d = DB.find(function(x){ return x.id === ficheId; });
   if(!d || !d.contacts || !d.contacts[idx]) return;
   var c = d.contacts[idx];
-  // Remplir le formulaire d'ajout avec les données existantes
+  var choix = confirm('Modifier ce contact ? (OK = Modifier, Annuler = Rien)');
+  if(!choix) return;
+  // Remplir le formulaire avec les données existantes
   document.getElementById('c-nom').value   = c.nom   || '';
   document.getElementById('c-poste').value = c.poste || '';
   document.getElementById('c-tel').value   = c.tel   || '';
   document.getElementById('c-email').value = c.email || '';
-  // Supprimer l'ancien contact et mettre le focus sur le formulaire
+  // Supprimer l'ancien et focus sur formulaire
   d.contacts.splice(idx, 1);
   saveDB();
   renderPanel(ficheId, 'contacts');
   document.getElementById('c-nom').focus();
-  // Petit indicateur visuel
   var btn = document.querySelector('[onclick*="addContact"]');
-  if(btn){ btn.textContent = '💾 Mettre à jour'; setTimeout(function(){ btn.textContent = 'Ajouter'; }, 5000); }
+  if(btn){ btn.textContent = '💾 Mettre à jour'; setTimeout(function(){ btn.textContent = 'Ajouter'; }, 8000); }
 }
 
 function deleteContact(id, idx) {
@@ -4049,8 +4050,8 @@ function renderObjectifsContent() {
     html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">';
     OBJ_FIELDS.forEach(function(f){
       var val = targets[f.key]||0;
-      html += '<div style="background:#1a1d2e;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">';
-      html += '<span style="font-size:13px;color:#e0e0e0">'+f.emoji+' '+f.label+'</span>';
+      html += '<div style="background:#232840;border:1px solid #3a3f5c;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">';
+      html += '<span style="font-size:13px;color:#ffffff;font-weight:500">'+f.emoji+' '+f.label+'</span>';
       html += '<input type="number" min="0" id="obj-field-'+f.key+'" value="'+val+'" style="width:70px;background:#0f111a;border:1px solid #f57c00;border-radius:6px;color:#f57c00;font-weight:700;font-size:14px;padding:4px 8px;text-align:center">';
       html += '</div>';
     });
@@ -4082,18 +4083,18 @@ function renderObjectifsContent() {
     var a = tot[f.key]||0;
     var p = t>0 ? Math.min(100, Math.round(a/t*100)) : 0;
     var c = p>=100?'#43a047':p>=50?'#f57c00':'#e53935';
-    html3 += '<div style="background:#1a1d2e;border-radius:10px;padding:10px 14px">';
+    html3 += '<div style="background:#232840;border:1px solid #3a3f5c;border-radius:10px;padding:10px 14px">';
     html3 += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-    html3 += '<span style="font-size:13px;color:#e0e0e0">'+f.emoji+' '+f.label+'</span>';
+    html3 += '<span style="font-size:13px;color:#ffffff;font-weight:500">'+f.emoji+' '+f.label+'</span>';
     html3 += '<div style="display:flex;align-items:center;gap:6px">';
     html3 += '<span style="font-size:14px;font-weight:700;color:'+c+'">'+a+'</span>';
-    html3 += '<span style="font-size:11px;color:#555">/ '+t+'</span>';
+    html3 += '<span style="font-size:11px;color:#aaa;font-weight:600">/ '+t+'</span>';
     if(p>=100) html3 += '<span>✅</span>';
     html3 += '</div></div>';
     if(t>0){
       html3 += '<div style="height:6px;background:#0f111a;border-radius:3px;overflow:hidden">';
       html3 += '<div style="height:100%;width:'+p+'%;background:'+c+';border-radius:3px;transition:width 0.4s"></div></div>';
-      html3 += '<div style="font-size:10px;color:#666;text-align:right;margin-top:3px">'+p+'%</div>';
+      html3 += '<div style="font-size:10px;color:#bbb;text-align:right;margin-top:3px;font-weight:600">'+p+'%</div>';
     }
     html3 += '</div>';
   });
@@ -4181,14 +4182,15 @@ function openHorsStatsModal(ho, v, motifMap){
   ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
 }
 
+// Stockage global pour hors stats
+window._horsStatsData = null;
+
 function statCardHors(label,val,color,pctTotal,motifCounts,vierges){
-  var btnId='hsc_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-  window['_hsc_'+btnId]={ho:val,v:vierges||0,m:motifCounts||{}};
-  var onclick='var d=window["_hsc_'+btnId+'"];openHorsStatsModal(d.ho,d.v,d.m)';
+  window._horsStatsData = {ho:val, v:vierges||0, m:motifCounts||{}};
   return '<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;position:relative">'
     +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between">'
     +'<span style="display:flex;align-items:center;gap:4px">'+label+'</span>'
-    +'<button onclick="'+onclick+'" title="Détail des motifs" style="background:#222;border:1px solid #444;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;color:#999;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">?</button>'
+    +'<button onclick="if(window._horsStatsData){openHorsStatsModal(window._horsStatsData.ho,window._horsStatsData.v,window._horsStatsData.m);}" title="Détail des motifs" style="background:#333;border:1px solid #555;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">?</button>'
     +'</div>'
     +'<div style="font-size:20px;font-weight:700;color:'+color+'">'+val+'</div>'
     +(pctTotal&&pctTotal!=='—'?'<div style="font-size:10px;color:'+color+';margin-top:2px;opacity:0.8">'+pctTotal+' des appels</div>':'')
