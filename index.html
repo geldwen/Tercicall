@@ -1242,7 +1242,7 @@ function renderPanelTab(tab) {
                   <div class="contact-name">${c.nom}</div>
                   <div class="contact-detail">${c.poste||''} ${c.poste&&(c.tel||c.email)?'·':''} ${c.tel ? `<a href="tel:${c.tel}" style="color:var(--accent)">${c.tel}</a>` : ''} ${c.email ? `· <a href="mailto:${c.email}" style="color:var(--accent)">${c.email}</a>` : ''}</div>
                 </div>
-                <button onclick="editContact('${d.id}',${i})" style="width:28px;height:28px;border-radius:50%;border:none;background:#f59e0b;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;margin-right:4px" title="Modifier">✏️</button><button onclick="editContact('${d.id}',${i})" style="width:26px;height:26px;border-radius:50%;border:none;background:#f59e0b;color:#fff;font-size:11px;cursor:pointer;flex-shrink:0;margin-right:4px" title="Modifier">✏️</button><button class="contact-del" onclick="deleteContact('${d.id}',${i})">✕</button>
+                <button onclick="editContact('${d.id}',${i})" style="width:26px;height:26px;border-radius:50%;border:none;background:#f59e0b;color:#fff;font-size:13px;cursor:pointer;flex-shrink:0;margin-right:4px" title="Modifier">✏️</button><button class="contact-del" onclick="deleteContact('${d.id}',${i})" style="width:26px;height:26px;border-radius:50%;border:none;background:#c62828;color:#fff;font-size:13px;cursor:pointer;flex-shrink:0" title="Supprimer">🗑️</button>
               </div>`).join('')}
         </div>
         <div style="margin-top:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
@@ -3375,34 +3375,51 @@ function statsNavMonth(d) {
   renderStatsCalendar();
 }
 
+function mergeStats(tot, s){
+  for(var k in tot){
+    if(k==='horsMotifMap') continue;
+    tot[k]+=(s[k]||0);
+  }
+  if(s.horsMotifMap){
+    Object.keys(s.horsMotifMap).forEach(function(m){
+      tot.horsMotifMap[m]=(tot.horsMotifMap[m]||0)+s.horsMotifMap[m];
+    });
+  }
+  return tot;
+}
+function newTot(){ return {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0,horsMotifMap:{}}; }
+
 function getStatsForDay(y, m, d) {
   var dateStr = y+'-'+(m+1)+'-'+d;
-  var result = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
+  var result = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0,horsMotifMap:{}};
 
   DB.forEach(function(fiche) {
     var actions = fiche.actions||[];
 
-    // Fiches créées ce jour (created = dateStr)
     if(fiche.created) {
       var fd = parseDateStr(fiche.created);
       if(fd === dateStr) result.v++;
     }
 
-    // Transitions de statut ce jour — on cherche dans les actions
-    // "Statut → Qualifié", "Statut → Négocié", etc.
-    // On prend la DERNIERE transition du jour pour chaque fiche (snapshot final)
     var lastTransition = null;
+    var lastHorsMotif = null;
     actions.forEach(function(a) {
       var aDate = parseDateStr(a.date);
       if(aDate !== dateStr) return;
       var t = a.text||'';
       if(t.indexOf('Statut') === 0) lastTransition = t;
+      if(t.indexOf('Hors planning - ') === 0) lastHorsMotif = t.replace('Hors planning - ','');
     });
     if(lastTransition) {
       if(lastTransition.indexOf('Qualifi') > 0) result.q++;
       else if(lastTransition.indexOf('goci') > 0) result.ng++;
       else if(lastTransition.indexOf('prestation') > 0) result.c1++;
-      else if(lastTransition.indexOf('Hors planning') > 0) result.ho++;
+      else if(lastTransition.indexOf('Hors planning') > 0) {
+        result.ho++;
+        if(lastHorsMotif){
+          result.horsMotifMap[lastHorsMotif]=(result.horsMotifMap[lastHorsMotif]||0)+1;
+        }
+      }
     }
 
     // Actions réalisées ce jour
@@ -3561,8 +3578,8 @@ function renderStatsDetail(){
   if(!_statsSel){el.innerHTML=renderPeriodSummary();return;}
   if(_statsSel.type==='week'){
     var wdays=getWeekDays(_statsSel.y,_statsSel.m,_statsSel.ref);
-    var tot={v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
-    wdays.forEach(function(day){var s=getStatsForDay(day.y,day.m,day.d);for(var k in tot)tot[k]+=s[k];});
+    var tot=newTot();
+    wdays.forEach(function(day){mergeStats(tot,getStatsForDay(day.y,day.m,day.d));})
     var d1=wdays[0],d7=wdays[6];
     var label='Semaine du '+d1.d+' '+STATS_MONTHS[d1.m]+' au '+d7.d+' '+STATS_MONTHS[d7.m]+' '+d7.y;
     el.innerHTML=renderSummaryBloc(tot,label,true);return;
@@ -3585,7 +3602,7 @@ function renderSummaryBloc(s,label,showExport){
     +statCard(sw('#e8a0c0')+' Qualifiées',s.q,'#e8a0c0','Taux qualif : '+pct(s.q,s.v))
     +statCard(sw('#7b2d8b')+' Négociées',s.ng,'#a855f7','Taux négo : '+pct(s.ng,s.q))
     +statCard(sw('#4a90d9')+' 1ère presta',s.c1,'#4a90d9','Taux closing : '+pct(s.c1,s.ng))
-    +statCard(sw('#1c1c1c','#555')+' Hors planning',s.ho,'var(--text3)',null)
+    +statCardHors(sw('#1c1c1c','#555')+' Hors planning',s.ho,'var(--text3)',pct(s.ho,s.ap),s.horsMotifMap,s.v)
     +'</div></div>'
     +'<div style="padding:14px 16px;border-bottom:1px solid var(--border)">'
     +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;font-weight:600">Actions réalisées</div>'
@@ -3647,10 +3664,9 @@ function getPeriodDays(){
 
 function renderPeriodSummary(){
   var days=getPeriodDays();
-  var tot={v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
+  var tot=newTot();
   days.forEach(function(day){
-    var s=getStatsForDay(day.y,day.m,day.d);
-    for(var k in tot) tot[k]+=s[k];
+    mergeStats(tot,getStatsForDay(day.y,day.m,day.d));
   });
   var label=_statsView==='semaine'?'Semaine en cours':'Mois de '+STATS_MONTHS[_statsMonth];
   return '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">'
@@ -3972,14 +3988,25 @@ var OBJ_FIELDS = [
 ];
 
 function loadObjectifs(){ try{ return JSON.parse(localStorage.getItem(OBJECTIFS_KEY))||[]; }catch(e){ return []; } }
-function saveObjectifs(obj){ localStorage.setItem(OBJECTIFS_KEY, JSON.stringify(obj)); }
+function saveObjectifs(obj){
+  localStorage.setItem(OBJECTIFS_KEY, JSON.stringify(obj));
+  // Sync Firebase
+  try{ fbRef.parent.child('objectifs').set(obj); }catch(e){}
+}
+// Charger objectifs depuis Firebase au démarrage
+try{
+  fbDB.ref('tercicall/objectifs').on('value', function(snap){
+    var data = snap.val();
+    if(data){ localStorage.setItem(OBJECTIFS_KEY, JSON.stringify(data)); }
+  });
+}catch(e){}
 
 function fmtDate(d){ return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear(); }
 function isoToDisplay(s){ if(!s)return ''; var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function displayToIso(s){ if(!s)return ''; var p=s.split('/'); if(p.length<3)return s; return p[2]+'-'+p[1]+'-'+p[0]; }
 
 function getTotForPeriod(dateFrom, dateTo) {
-  var tot = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
+  var tot = newTot();
   if(!dateFrom||!dateTo) return tot;
   var d1 = new Date(dateFrom), d2 = new Date(dateTo);
   var cur = new Date(d1);
@@ -4102,6 +4129,70 @@ function submitObjectifs(){
   saveObjectifs(objs);
   _objEditMode = false;
   renderObjectifsContent();
+}
+
+
+function openHorsStatsModal(ho, v, motifMap){
+  var old=document.getElementById('hors-stats-modal');if(old)old.remove();
+  var total=ho||0;
+  var taux=v?Math.round(total/v*100)+'%':'—';
+  var motifs=Object.keys(motifMap||{}).sort(function(a,b){return (motifMap[b]||0)-(motifMap[a]||0);});
+  var rows='';
+  if(motifs.length===0){
+    rows='<div style="color:#666;font-size:12px;text-align:center;padding:12px">Aucun motif enregistré sur cette période</div>';
+  } else {
+    motifs.forEach(function(m){
+      var n=motifMap[m]||0;
+      var p=total?Math.round(n/total*100):0;
+      var barW=Math.max(4,p);
+      rows+='<div style="margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+        +'<span style="font-size:12px;color:#ccc">'+m+'</span>'
+        +'<span style="font-size:12px;color:#888;white-space:nowrap;margin-left:8px">'+n+' · '+p+'%</span>'
+        +'</div>'
+        +'<div style="height:6px;border-radius:3px;background:#1a1a1a;overflow:hidden">'
+        +'<div style="height:100%;border-radius:3px;background:#555;width:'+barW+'%"></div>'
+        +'</div>'
+        +'</div>';
+    });
+  }
+  var ov=document.createElement('div');
+  ov.id='hors-stats-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center';
+  ov.innerHTML='<div style="background:#12151f;border:1px solid #333;border-radius:16px;padding:22px;width:420px;max-width:94vw;max-height:80vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'
+    +'<div style="font-size:15px;font-weight:700;color:#ccc">⬛ Analyse Hors planning</div>'
+    +'<button onclick="var m=document.getElementById(\'hors-stats-modal\');if(m)m.remove();" style="background:none;border:none;color:#666;font-size:18px;cursor:pointer;line-height:1">×</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
+    +'<div style="background:#1a1a1a;border-radius:10px;padding:12px;text-align:center">'
+    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Total hors planning</div>'
+    +'<div style="font-size:24px;font-weight:700;color:#888">'+total+'</div>'
+    +'</div>'
+    +'<div style="background:#1a1a1a;border-radius:10px;padding:12px;text-align:center">'
+    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Taux / vierges créées</div>'
+    +'<div style="font-size:24px;font-weight:700;color:#888">'+taux+'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;font-weight:600">Répartition par motif</div>'
+    +rows
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+}
+
+function statCardHors(label,val,color,pctTotal,motifCounts,vierges){
+  var btnId='hsc_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  window['_hsc_'+btnId]={ho:val,v:vierges||0,m:motifCounts||{}};
+  var onclick='var d=window["_hsc_'+btnId+'"];openHorsStatsModal(d.ho,d.v,d.m)';
+  return '<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;position:relative">'
+    +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="display:flex;align-items:center;gap:4px">'+label+'</span>'
+    +'<button onclick="'+onclick+'" title="Détail des motifs" style="background:#222;border:1px solid #444;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;color:#999;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">?</button>'
+    +'</div>'
+    +'<div style="font-size:20px;font-weight:700;color:'+color+'">'+val+'</div>'
+    +(pctTotal&&pctTotal!=='—'?'<div style="font-size:10px;color:'+color+';margin-top:2px;opacity:0.8">'+pctTotal+' des appels</div>':'')
+    +'</div>';
 }
 
 function renderObjectifsBar(s) {
