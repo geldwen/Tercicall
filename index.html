@@ -2395,6 +2395,24 @@ function addContact(id) {
   const nom = document.getElementById('c-nom').value.trim();
   if (!nom) { alert('Le nom est obligatoire'); return; }
   d.contacts = d.contacts || [];
+  // Mode édition : remplacer le contact existant
+  if(_editContactFicheId === id && _editContactIdx !== null) {
+    d.contacts[_editContactIdx] = {
+      nom,
+      poste: document.getElementById('c-poste').value.trim(),
+      tel: document.getElementById('c-tel').value.trim(),
+      email: document.getElementById('c-email').value.trim(),
+      date: d.contacts[_editContactIdx].date || now()
+    };
+    _editContactFicheId = null;
+    _editContactIdx = null;
+    var btn = document.querySelector('[onclick*="addContact"]');
+    if(btn){ btn.textContent = 'Ajouter'; btn.style.background = ''; }
+    saveDB();
+    renderPanelTab('contacts');
+    return;
+  }
+  // Mode ajout normal
   d.contacts.push({
     nom,
     poste: document.getElementById('c-poste').value.trim(),
@@ -2416,24 +2434,28 @@ function addContact(id) {
 }
 
 
+var _editContactFicheId = null;
+var _editContactIdx = null;
+
 function editContact(ficheId, idx) {
   var d = DB.find(function(x){ return x.id === ficheId; });
   if(!d || !d.contacts || !d.contacts[idx]) return;
   var c = d.contacts[idx];
-  var choix = confirm('Modifier ce contact ? (OK = Modifier, Annuler = Rien)');
-  if(!choix) return;
-  // Remplir le formulaire avec les données existantes
+  // Remplir le formulaire SANS supprimer le contact
   document.getElementById('c-nom').value   = c.nom   || '';
   document.getElementById('c-poste').value = c.poste || '';
   document.getElementById('c-tel').value   = c.tel   || '';
   document.getElementById('c-email').value = c.email || '';
-  // Supprimer l'ancien et focus sur formulaire
-  d.contacts.splice(idx, 1);
-  saveDB();
-  renderPanel(ficheId, 'contacts');
+  // Mémoriser quel contact on modifie
+  _editContactFicheId = ficheId;
+  _editContactIdx = idx;
   document.getElementById('c-nom').focus();
+  // Changer le bouton Ajouter en Mettre à jour
   var btn = document.querySelector('[onclick*="addContact"]');
-  if(btn){ btn.textContent = '💾 Mettre à jour'; setTimeout(function(){ btn.textContent = 'Ajouter'; }, 8000); }
+  if(btn){
+    btn.textContent = '💾 Mettre à jour';
+    btn.style.background = '#f57c00';
+  }
 }
 
 function deleteContact(id, idx) {
