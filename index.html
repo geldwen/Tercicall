@@ -456,6 +456,8 @@ select.filter-sel:focus { border-color: var(--accent); }
 .admin-form-row input:focus, .admin-form-row select:focus { border-color: var(--accent); }
 .btn-add-user { background: var(--blue); color: white; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -877,7 +879,34 @@ select.filter-sel:focus { border-color: var(--accent); }
 
 <script>
 // ===================== DATA =====================
-let DB = JSON.parse(localStorage.getItem('tercicall_db') || '[]');
+// ===================== FIREBASE CONFIG =====================
+const firebaseConfig = {
+  apiKey: "AIzaSyBJCTXv87UhrcN4TlJJMmPJ8jXdO9umrqk",
+  authDomain: "tercicall.firebaseapp.com",
+  databaseURL: "https://tercicall-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tercicall",
+  storageBucket: "tercicall.firebasestorage.app",
+  messagingSenderId: "363764593286",
+  appId: "1:363764593286:web:d782d723f6e57e955b1707"
+};
+firebase.initializeApp(firebaseConfig);
+var fbDB = firebase.database();
+var fbRef = fbDB.ref('tercicall/db');
+
+let DB = [];
+
+// Chargement initial + écoute en temps réel
+fbRef.on('value', function(snapshot) {
+  var data = snapshot.val();
+  DB = data ? Object.values(data) : [];
+  // Sauvegarder aussi en localStorage comme cache
+  localStorage.setItem('tercicall_db', JSON.stringify(DB));
+  updateStats();
+  renderList();
+  if(typeof renderPanelTab === 'function' && window._currentPanelId) {
+    renderPanelTab(currentTab||'info');
+  }
+});
 let currentView = 'all';
 let currentViewMode = 'list';
 let currentPanelId = null;
@@ -906,6 +935,13 @@ function onIdccInput(val){
 }
 
 function saveDB() {
+  // Sauvegarder dans Firebase (temps réel)
+  var fbData = {};
+  DB.forEach(function(fiche) {
+    fbData[fiche.id] = fiche;
+  });
+  fbRef.set(fbData).catch(function(err){ console.error('Firebase saveDB error:', err); });
+  // Sauvegarder aussi en localStorage comme cache
   localStorage.setItem('tercicall_db', JSON.stringify(DB));
   updateStats();
   renderList();
@@ -3776,10 +3812,17 @@ function importJSON(event){
       if(!Array.isArray(fiches)||fiches.length===0){alert('Fichier JSON invalide.');return;}
       if(!confirm('Importer '+fiches.length+' fiches ? Les données actuelles seront remplacées.'))return;
       DB=fiches;
+      // Sauvegarder dans Firebase ET localStorage
+      var fbData = {};
+      DB.forEach(function(fiche){ fbData[fiche.id] = fiche; });
+      fbRef.set(fbData).then(function(){
+        alert('Import réussi — '+fiches.length+' fiches chargées et synchronisées !');
+      }).catch(function(err){
+        alert('Import local OK mais erreur Firebase : '+err.message);
+      });
       localStorage.setItem('tercicall_db',JSON.stringify(DB));
       renderList();
-      alert('Import réussi — '+fiches.length+' fiches chargées !');
-    }catch(err){alert('Erreur lecture JSON.');}
+    }catch(err){alert('Erreur lecture JSON : '+err.message);}
   };
   reader.readAsText(file);
   event.target.value='';
