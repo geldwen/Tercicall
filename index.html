@@ -526,6 +526,7 @@ select.filter-sel:focus { border-color: var(--accent); }
     <div id="user-badge" style="display:none;">
       <span>👤 <strong id="user-name-display"></strong></span>
       <button id="btn-admin" onclick="openAdmin()" style="display:none;">⚙️ Utilisateurs</button>
+      <button id="btn-objectifs" onclick="openObjectifs()" title="Objectifs" style="background:#e65100;border:1px solid #f57c00;color:white;border-radius:6px;padding:4px 8px;cursor:pointer;display:none;align-items:center;margin-right:4px">🎯</button>
       <button id="btn-stats" onclick="openStats()" title="Statistiques" style="background:#2e7d32;border:1px solid #43a047;color:white;border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
       <button id="btn-logout" onclick="doLogout()">Déconnexion</button>
     </div>
@@ -662,12 +663,13 @@ select.filter-sel:focus { border-color: var(--accent); }
     <button class="panel-close" onclick="closePanel()">✕</button>
   </div>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('info',this)">Fiche</div>
-    <div class="tab" onclick="switchTab('contacts',this)">Contacts</div>
-    <div class="tab" onclick="switchTab('actions',this)">Historique</div>
-    <div class="tab" onclick="switchTab('documents',this)">Documents</div>
-    <div class="tab" onclick="switchTab('script',this)">Script</div>
+    <div class="tab active" onclick="switchTab('info',this)" style="color:#a78bfa">🏢 Fiche</div>
+    <div class="tab" onclick="switchTab('contacts',this)" style="color:#34d399">👥 Contacts</div>
+    <div class="tab" onclick="switchTab('actions',this)" style="color:#60a5fa">📋 Historique</div>
+    <div class="tab" onclick="switchTab('documents',this)" style="color:#f472b6">📎 Documents</div>
+    <div class="tab" onclick="switchTab('script',this)" style="color:#fb923c">🎙️ Script</div>
     <div class="tab" onclick="switchTab('formations',this)" style="color:#4fc3f7">🎓 Formations</div>
+    <div class="tab" onclick="switchTab('mails',this)" style="color:#fbbf24">✉️ Mails</div>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </div>
@@ -687,7 +689,11 @@ select.filter-sel:focus { border-color: var(--accent); }
         </div>
         <div class="form-field">
           <label class="form-label">SIRET</label>
-          <input class="form-input" id="f-siret" placeholder="123 456 789 00012">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="form-input" id="f-siret" placeholder="123 456 789 00012" style="flex:1">
+            <button type="button" onclick="lookupSiret()" id="siret-btn" style="padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍 Auto</button>
+          </div>
+          <div id="siret-status" style="font-size:11px;margin-top:4px;min-height:16px"></div>
         </div>
       </div>
       <div class="form-row">
@@ -750,6 +756,22 @@ select.filter-sel:focus { border-color: var(--accent); }
         <div class="form-field">
           <label class="form-label">Nb salariés</label>
           <input class="form-input" id="f-salaries" placeholder="ex: 25" type="number">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">IDCC <span style="font-size:10px;color:var(--text3)">(convention collective)</span></label>
+          <input class="form-input" id="f-idcc" placeholder="Ex: 1090" oninput="onIdccInput(this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">OPCO (via IDCC)</label>
+          <input class="form-input" id="f-opco-idcc" placeholder="Auto depuis IDCC..." readonly style="color:var(--accent);font-weight:600">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Convention collective</label>
+          <input class="form-input" id="f-idcc-conv" placeholder="Auto depuis IDCC..." readonly style="color:var(--text2);font-size:12px">
         </div>
       </div>
       <div class="form-field">
@@ -855,12 +877,33 @@ select.filter-sel:focus { border-color: var(--accent); }
 
 <script>
 // ===================== DATA =====================
-let DB = JSON.parse(localStorage.getItem('tercicall_db') || JSON.stringify([{"id": "c4c5cf58", "cat": "entreprise", "nom": "Howdens", "tel": "01 41 57 05 70", "email": "", "adresse": "204-208 Bd F\u00e9lix Faure, 93300 Aubervilliers", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 00:44", "contacts": [], "actions": []}, {"id": "7492734a", "cat": "entreprise", "nom": "Style Cuisine", "tel": "01 48 40 20 14", "email": "", "adresse": "01 bis Rue de Paris, 93000 Bobigny", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "10.0", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 00:46", "contacts": [], "actions": []}, {"id": "910e982d", "cat": "entreprise", "nom": "Easy cuisine", "tel": "01 76 44 15 26", "email": "", "adresse": "225 Rue de Noisy-le-Sec, 93260 Les Lilas", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "10.0", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 00:48", "contacts": [], "actions": []}, {"id": "eef14c6f", "cat": "entreprise", "nom": "Cuisine Elite", "tel": "01 43 84 72 64", "email": "", "adresse": "81-83 Rue d'Aulnay, 93270 Sevran", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "10.0", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 01:01", "contacts": [], "actions": []}, {"id": "4ca6210d", "cat": "entreprise", "nom": "Art et Cuisine", "tel": "01 48 48 49 49", "email": "", "adresse": "166 Av. Aristide Briand, 93320 Les Pavillons-sous-Bois", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "10.0", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 01:04", "contacts": [], "actions": []}, {"id": "4211d4aa", "cat": "entreprise", "nom": "Cuisines ELITE Premium", "tel": "01 47 99 87 16", "email": "", "adresse": "103 Av. de la Marne, 92600 Asni\u00e8res-sur-Seine", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage", "naf": "4647Z", "opcoNom": "Opco EP", "salaries": "10.0", "notes": "", "marche": "direct", "status": "vierge", "created": "16/04/2026 01:07", "contacts": [], "actions": []}, {"id": "cc37a4c7", "cat": "entreprise", "nom": "MORYGLOBAL", "tel": "01 48 63 16 20", "email": "", "adresse": "RUE DES VIGNETTES 60490 CUVILLY", "siret": "799 893 888 00237", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "09e92d6e", "cat": "entreprise", "nom": "WALON FRANCE", "tel": "03 44 91 56 90", "email": "", "adresse": "3 RUE DU BOIS BARBIER 60880 LE MEUX", "siret": "615 920 188 00419", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "d8c8130a", "cat": "entreprise", "nom": "FREVIAL", "tel": "03 44 04 57 10", "email": "", "adresse": "20 RTE DE GAILLEFONTAINE 60220 FORMERIE", "siret": "419 468 251 00014", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "338e5013", "cat": "entreprise", "nom": "LUMINO", "tel": "03 44 07 86 00", "email": "", "adresse": "CHEMIN DES PASSANTS 60510 BRESLES", "siret": "303 358 238 00101", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "a07dd49d", "cat": "entreprise", "nom": "SARL LEROY", "tel": "06 23 74 68 53", "email": "", "adresse": "174 RUE DU BEL AIR 60620 BARGNY", "siret": "389 867 144 00047", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "c190ec17", "cat": "entreprise", "nom": "JAST", "tel": "06 48 16 39 67", "email": "", "adresse": "17B RUE DES HERMITTES 60510 LAVERSINES", "siret": "510 294 093 00057", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "45d0b814", "cat": "entreprise", "nom": "PATINTER FRANCE", "tel": "03 44 60 68 70", "email": "", "adresse": "ZI DES MEUNIERS RUE DE LA GARENNE 60330 LE PLESSIS-BELLEVILLE", "siret": "432 940 849 00032", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "direct", "status": "vierge", "created": "24 avril 2026", "contacts": [], "actions": []}, {"id": "4e7c09f2", "cat": "entreprise", "nom": "TMK", "tel": "07 45 54 73 38", "email": "", "adresse": "25 Rue de la R\u00e9publique, 60160 Montataire", "siret": "888 086 071 00014", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h13", "contacts": [], "actions": []}, {"id": "1f5bedba", "cat": "entreprise", "nom": "BTL Transports", "tel": "03 44 32 02 32", "email": "", "adresse": "zone artisanale Petite Vall\u00e9e 60290 Cauffry", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h22", "contacts": [], "actions": []}, {"id": "4bb4a347", "cat": "entreprise", "nom": "NI2M Transports", "tel": "06 30 82 69 42", "email": "", "adresse": "50 rue Joseph Porphyre Pinchon 60280 Clairoix", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h23", "contacts": [], "actions": []}, {"id": "7f451fa4", "cat": "entreprise", "nom": "Acoleva TLM", "tel": "03 44 83 91 77", "email": "", "adresse": "15 rue Plaine 60190 Arsy", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h25", "contacts": [], "actions": []}, {"id": "0fdf3d06", "cat": "entreprise", "nom": "Beauvais International", "tel": "03 44 11 40 00", "email": "", "adresse": "Z I rue Gare 60430 Warluis", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h27", "contacts": [], "actions": []}, {"id": "d63f48ef", "cat": "entreprise", "nom": "DSV Solutions", "tel": "03 44 10 35 00", "email": "", "adresse": "ZA de la Vatine rue Vatine 60000 Beauvais", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h30", "contacts": [], "actions": []}, {"id": "f62dfc27", "cat": "entreprise", "nom": "TRANSPORTS GERALD GASTON SARL", "tel": "03 44 72 62 61", "email": "", "adresse": "chemin Cerisiers Roussel 60700 Pontpoint", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h31", "contacts": [], "actions": []}, {"id": "ed3c8577", "cat": "entreprise", "nom": "Tiltmann France", "tel": "03 44 20 00 00", "email": "", "adresse": "Zac Des Hauts De Margny 209 rue Ren\u00e9 Caudron 60280 Margny l\u00e8s Compi\u00e8gne", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h32", "contacts": [], "actions": []}, {"id": "b07a24a1", "cat": "entreprise", "nom": "Groupe Dufour", "tel": "03 28 25 44 50", "email": "", "adresse": "Les Fortes Terres route Nationale 31 60680 Jonqui\u00e8res", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h33", "contacts": [], "actions": []}, {"id": "28941ced", "cat": "entreprise", "nom": "Globale Transport", "tel": "07 53 14 95 00", "email": "", "adresse": "2001 Route Nationale 60300 Mont l'Ev\u00eaque", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h33", "contacts": [], "actions": []}, {"id": "46882c7d", "cat": "entreprise", "nom": "T Plus Services", "tel": "03 44 56 58 58", "email": "", "adresse": "19 rue Emile Zola 60290 Rantigny", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h34", "contacts": [], "actions": []}, {"id": "8ae227e2", "cat": "entreprise", "nom": "Transports Pr\u00e9vot\u00e9", "tel": "03 44 52 60 00", "email": "", "adresse": "2 impasse Faubourg d'Agnicourt 60110 M\u00e9ru", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h35", "contacts": [], "actions": []}, {"id": "a4212637", "cat": "entreprise", "nom": "PKM Express", "tel": "03 44 09 00 03", "email": "", "adresse": "12 avenue Gare 60400 Noyon", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h37", "contacts": [], "actions": []}, {"id": "2354a3d6", "cat": "entreprise", "nom": "Tam Express", "tel": "07 69 03 56 40", "email": "", "adresse": "Clos Domaine 130 chemin Moulin \u00e0 Draps 60230 Chambly", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h38", "contacts": [], "actions": []}, {"id": "e06951d3", "cat": "entreprise", "nom": "CEVA Logistics", "tel": "03 44 88 35 35", "email": "", "adresse": "rue Croix Verte 60440 Nanteuil Le Haudouin", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h39", "contacts": [], "actions": []}, {"id": "ca0e050e", "cat": "entreprise", "nom": "Oissel Transports", "tel": "03 44 24 27 31", "email": "", "adresse": "424 avenue Tremblay 60100 Creil", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h39", "contacts": [], "actions": []}, {"id": "552539e7", "cat": "entreprise", "nom": "LESS N GO SAS", "tel": "03 75 12 00 76", "email": "", "adresse": "5 avenue Georges Bataille 60330 Le Plessis Belleville", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h44", "contacts": [], "actions": []}, {"id": "c8f352b0", "cat": "entreprise", "nom": "Transports Choquet", "tel": "03 44 13 39 39", "email": "", "adresse": "Zi Feuqui\u00e8res chemin D\u00e9partemental 124 Formerie Conty 60960 Feuqui\u00e8res", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h45", "contacts": [], "actions": []}, {"id": "70ce7634", "cat": "entreprise", "nom": "Open trajets", "tel": "07 78 55 75 65", "email": "", "adresse": "26 rue Robert Schuman 60100 Creil", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h46", "contacts": [], "actions": []}, {"id": "dc30bc31", "cat": "entreprise", "nom": "Promil", "tel": "03 44 24 28 04", "email": "", "adresse": "87 rue Marie Curie 60740 Saint Maximin", "siret": "", "secteur": "Transports routiers de fret interurbains", "naf": "4941A", "opcoNom": "OPCO Mobilit\u00e9s", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h47", "contacts": [], "actions": []}, {"id": "0224fbd2", "cat": "entreprise", "nom": "ARS METAL Atelier de Refendage Service ARS", "tel": "03 44 61 21 60", "email": "", "adresse": "rue Benoit Frachon 60740 Saint Maximin", "siret": "", "secteur": "Commerce de gros (commerce interentreprises) de minerais et métaux", "naf": "4669A", "opcoNom": "Opco EP", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "24 avril 2026 \u00e0 02h53", "contacts": [], "actions": []}, {"id": "6e328b77", "cat": "entreprise", "nom": "Exea", "tel": "03 44 88 13 78", "email": "", "adresse": "37 Bis rue Gambetta 60440 Nanteuil Le Haudouin", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h44", "contacts": [], "actions": []}, {"id": "0cdc8c58", "cat": "entreprise", "nom": "Cabinet ALP", "tel": "03 44 63 00 95", "email": "", "adresse": "1 rue Conn\u00e9table 60500 Chantilly", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h45", "contacts": [], "actions": []}, {"id": "f6534ee2", "cat": "entreprise", "nom": "Cabinet Valentin Gaucher", "tel": "03 74 47 49 10", "email": "", "adresse": "170 Grande Rue 60490 Margny sur Matz", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h46", "contacts": [], "actions": []}, {"id": "9447c3cb", "cat": "entreprise", "nom": "Agora SEA - Chambly", "tel": "09 51 16 33 05", "email": "", "adresse": "44 rue Aur\u00e9lien Cronnier 60230 Chambly", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h47", "contacts": [], "actions": []}, {"id": "101026f8", "cat": "entreprise", "nom": "IGEXA", "tel": "03 44 64 90 90", "email": "", "adresse": "Zaet Creil St Maximin 55 rue Galil\u00e9e 60100 Creil", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h50", "contacts": [], "actions": []}, {"id": "0cfea8fa", "cat": "entreprise", "nom": "Nathalie BOUARD Expertise NBE", "tel": "03 44 55 23 04", "email": "", "adresse": "1er \u00e9tage \u00e0 gauche Alatium 1 2 avenue For\u00eat d'Halatte 60100 Creil", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h51", "contacts": [], "actions": []}, {"id": "0b533a5e", "cat": "entreprise", "nom": "KPMG", "tel": "03 60 60 54 40", "email": "", "adresse": "170 rue Sables 60840 Breuil le Sec", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h53", "contacts": [], "actions": []}, {"id": "2a9d75d6", "cat": "entreprise", "nom": "Am Expertise", "tel": "06 44 86 69 67", "email": "", "adresse": "12 rue Pasteur 60100 Creil", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h54", "contacts": [], "actions": []}, {"id": "d821ce12", "cat": "entreprise", "nom": "Fiscality", "tel": "03 44 07 44 48", "email": "", "adresse": "75 route Parisis Fontaine 60430 Noailles", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h54", "contacts": [], "actions": []}, {"id": "5b0f614b", "cat": "entreprise", "nom": "In Extenso", "tel": "03 44 38 56 56", "email": "", "adresse": "Parc Tertiaire de la Croix CS 12 116 rue Jean Monnet 60200 Compi\u00e8gne", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h55", "contacts": [], "actions": []}, {"id": "d7152c2f", "cat": "entreprise", "nom": "Finta\u00e9", "tel": "06 10 92 63 94", "email": "", "adresse": "1 all\u00e9e Strasbourg 60340 Villers sous Saint Leu", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "Comptabe sp\u00e9cialiste des auto entrepreneur", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h57", "contacts": [], "actions": []}, {"id": "aba8b37b", "cat": "entreprise", "nom": "Cabinet Delautre - Forestier - Bilbault & Associ\u00e9s", "tel": "03 44 23 20 67", "email": "", "adresse": "Holdiparc 4 Parc Tertiaire de la 4 avenue Europe 60200 Compi\u00e8gne", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h58", "contacts": [], "actions": []}, {"id": "8336f054", "cat": "entreprise", "nom": "Phoenix Finances EC", "tel": "03 44 52 85 96", "email": "", "adresse": "1 rue Amiens 60000 Beauvais", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 18h58", "contacts": [], "actions": []}, {"id": "80ddfe97", "cat": "entreprise", "nom": "Endrix", "tel": "03 75 00 03 10", "email": "", "adresse": "11 avenue Pierre B\u00e9r\u00e9govoy 60000 Beauvais", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h00", "contacts": [], "actions": []}, {"id": "38eb3f96", "cat": "entreprise", "nom": "AC8", "tel": "03 44 79 24 51", "email": "", "adresse": "42 rue Ecole Maternelle 60000 Beauvais", "siret": "", "secteur": "Activités comptables", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h01", "contacts": [], "actions": []}, {"id": "5e0263d9", "cat": "entreprise", "nom": "Telegest SARL", "tel": "03 44 06 39 39", "email": "", "adresse": "BAT. ALTO-CENTRE D'AFFAIRES LE CORYPHE, 5 RUE MAIDSTONE, 60000 BEAUVAIS", "siret": "39752880300042", "secteur": "Services administratifs combinés de bureau", "naf": "8211Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h06", "contacts": [], "actions": []}, {"id": "070f4e79", "cat": "entreprise", "nom": "CONCENTRIX COMPIEGNE FRANCE", "tel": "03 44 44 06 12", "email": "", "adresse": "98 impasse Terres Aupres des Iles 60610 Lacroix Saint Ouen", "siret": "", "secteur": "Activités de centres d'appels", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h10", "contacts": [], "actions": []}, {"id": "f4b36c85", "cat": "entreprise", "nom": "Assistcom", "tel": "03 44 36 14 60", "email": "", "adresse": "421 rue Cezslaw Barski 60170 Pimprez", "siret": "52396970700034", "secteur": "Photocopie, préparation de documents et autres activités spécialisées de soutien de bureau", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h13", "contacts": [], "actions": []}, {"id": "6651ed72", "cat": "entreprise", "nom": "BUBBLE CLEAN", "tel": "06 18 66 64 90", "email": "", "adresse": "16 RUE SALVADOR ALLENDE, 60340 SAINT-LEU-D'ESSERENT", "siret": "94126303000012", "secteur": "Nettoyage courant des bâtiments", "naf": "8121Z", "opcoNom": "Opco EP", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h18", "contacts": [], "actions": []}, {"id": "b605395b", "cat": "entreprise", "nom": "Net Nettoyage", "tel": "03 65 65 97 20", "email": "", "adresse": "6 rue Victor Hugo 60500 Chantilly", "siret": "", "secteur": "Nettoyage courant des bâtiments", "naf": "8121Z", "opcoNom": "Opco EP", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h22", "contacts": [], "actions": []}, {"id": "26678819", "cat": "entreprise", "nom": "CYRIALIS Nettoyage", "tel": "03 44 45 49 11", "email": "", "adresse": "39 rue Amiens 60000 Beauvais", "siret": "47922478400039", "secteur": "Nettoyage courant des bâtiments", "naf": "8121Z", "opcoNom": "Opco EP", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h24", "contacts": [], "actions": []}, {"id": "c58509a0", "cat": "entreprise", "nom": "SARL A.T.M.I", "tel": "06 20 61 70 88", "email": "", "adresse": "60 rue Lib\u00e9ration 60530 Le Mesnil en Thelle", "siret": "", "secteur": "Activités liées aux systèmes de sécurité", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h31", "contacts": [], "actions": []}, {"id": "27774c70", "cat": "entreprise", "nom": "CACTUS PROTECTION", "tel": "06 07 65 38 93", "email": "", "adresse": "62 1\u00e8re Avenue 60260 Lamorlaye", "siret": "39758074700038", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h34", "contacts": [], "actions": []}, {"id": "740588a8", "cat": "entreprise", "nom": "T.A.D.E", "tel": "06 79 08 05 08", "email": "", "adresse": "7 impasse Cav\u00e9e 60190 Lachelle", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h38", "contacts": [], "actions": []}, {"id": "060f64a1", "cat": "entreprise", "nom": "NFC Pr\u00e9vention", "tel": "06 76 64 49 80", "email": "", "adresse": "b\u00e2t 8 52 rue Pierre Bray 60290 Neuilly sous Clermont", "siret": "", "secteur": "Travaux d'installation d'eau et de gaz en tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h40", "contacts": [], "actions": []}, {"id": "7dad2c54", "cat": "entreprise", "nom": "EURL CAUVELEC", "tel": "03 44 90 06 78 / 06 03 35 38 57", "email": "", "adresse": "60 rue Edouard Meunier 60150 Le Plessis Brion", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h41", "contacts": [], "actions": []}, {"id": "83e91f8b", "cat": "entreprise", "nom": "Cap S\u00e9curit\u00e9 60 SARL", "tel": "03 44 25 40 58 / 09 66 44 01 28", "email": "", "adresse": "15 Bis rue Mairie 60270 Gouvieux", "siret": "", "secteur": "Activités liées aux systèmes de sécurité", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h42", "contacts": [], "actions": []}, {"id": "700e0d63", "cat": "entreprise", "nom": "C\u00e9rou", "tel": "06 61 50 72 43", "email": "", "adresse": "13 rue Jeu de Paume 60130 Bulles", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h44", "contacts": [], "actions": []}, {"id": "4d6df9ce", "cat": "entreprise", "nom": "BPI S\u00e9curit\u00e9", "tel": "06 51 10 49 76", "email": "", "adresse": "11 rue Abreuvoir 60690 Roy Boissy", "siret": "", "secteur": "Autres travaux d'installation n.c.a.", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h46", "contacts": [], "actions": []}, {"id": "fbeadef7", "cat": "entreprise", "nom": "Aper s\u00e9curit\u00e9", "tel": "06 72 61 74 61", "email": "", "adresse": "10 RUE DU VIEUX MOULIN, 60190 GOURNAY-SUR-ARONDE", "siret": "", "secteur": "Activités de sécurité privée", "naf": "6920Z", "opcoNom": "Akto", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h56", "contacts": [], "actions": []}, {"id": "eb557be9", "cat": "entreprise", "nom": "Alarm - Control", "tel": "03 44 48 49 44 / 09 60 50 52 15", "email": "", "adresse": "39 rue 27 Juin 60000 Beauvais", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 19h57", "contacts": [], "actions": []}, {"id": "f1deb8af", "cat": "entreprise", "nom": "Pic-Matic", "tel": "03 44 47 87 17", "email": "", "adresse": "6 place Gr\u00e9court 60155 Saint L\u00e9ger en Bray", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 20h01", "contacts": [], "actions": []}, {"id": "7f6a1489", "cat": "entreprise", "nom": "Aselesaint", "tel": "03 44 87 13 16 / 06 22 23 27 63", "email": "", "adresse": "176 rue Airaines 60800 Trumilly", "siret": "", "secteur": "Travaux d'installation électrique dans tous locaux", "naf": "4321A", "opcoNom": "Constructys", "salaries": "", "notes": "", "marche": "opco", "status": "vierge", "created": "3 mai 2026 \u00e0 20h03", "contacts": [], "actions": []}]));
+let DB = JSON.parse(localStorage.getItem('tercicall_db') || '[]');
 let currentView = 'all';
 let currentViewMode = 'list';
 let currentPanelId = null;
 let editingId = null;
 let currentTab = 'info';
+
+var IDCC_BASE = [{"opco": "AFDAS", "idcc": "2642", "conv": "Convention collective de la production audiovisuelle"}, {"opco": "AFDAS", "idcc": "1016", "conv": "Convention collective des cadres et agents de maîtrise de l'édition de musique"}, {"opco": "AFDAS", "idcc": "1194", "conv": "Convention collective nationale des employés de l'édition de musique"}, {"opco": "AFDAS", "idcc": "2257", "conv": "Convention collective nationale des casinos"}, {"opco": "AFDAS", "idcc": "2121", "conv": "Convention collective nationale de l'édition"}, {"opco": "AFDAS", "idcc": "2412", "conv": "Convention collective de la production de films d'animation"}, {"opco": "AFDAS", "idcc": "3097", "conv": "Convention collective nationale de la production cinématographique"}, {"opco": "AFDAS", "idcc": "1307", "conv": "Convention collective nationale de l'exploitation cinématographique"}, {"opco": "AFDAS", "idcc": "0892", "conv": "Convention collective nationale des cadres et agents de maîtrise de la distribution de films de l'industrie cinématographique"}, {"opco": "AFDAS", "idcc": "0716", "conv": "Convention collective nationale des employés et ouvriers de la distribution cinématographique"}, {"opco": "AFDAS", "idcc": "1734", "conv": "Convention collective des artistes-interprètes engagés pour des émissions de télévision"}, {"opco": "AFDAS", "idcc": "1790", "conv": "Convention collective nationale des espaces de loisirs, d'attractions et culturels"}, {"opco": "AFDAS", "idcc": "1895", "conv": "Convention collective de l'encadrement de la presse quotidienne régionale"}, {"opco": "AFDAS", "idcc": "0693", "conv": "Convention collective de travail des employés de la presse quotidienne départementale"}, {"opco": "AFDAS", "idcc": "0698", "conv": "Convention collective de travail des employés de la presse quotidienne régionale"}, {"opco": "AFDAS", "idcc": "1083", "conv": "Convention collective de travail des ouvriers de la presse quotidienne départementale"}, {"opco": "AFDAS", "idcc": "0781", "conv": "Convention collective des cadres administratifs de la presse quotidienne départementale"}, {"opco": "AFDAS", "idcc": "0509", "conv": "Convention collective des cadres administratifs de la presse quotidienne parisienne"}, {"opco": "AFDAS", "idcc": "1563", "conv": "Convention collective des cadres de la presse hebdomadaire régionale d'information"}, {"opco": "AFDAS", "idcc": "1018", "conv": "Convention collective des cadres techniques de la presse quotidienne départementale française"}, {"opco": "AFDAS", "idcc": "0306", "conv": "Convention collective des cadres techniques de la presse quotidienne parisienne"}, {"opco": "AFDAS", "idcc": "1281", "conv": "Convention collective des employés de la presse hebdomadaire régionale"}, {"opco": "AFDAS", "idcc": "0394", "conv": "Convention collective des employés de la presse quotidienne parisienne"}, {"opco": "AFDAS", "idcc": "0214", "conv": "Convention collective des ouvriers des entreprises de presse de la région parisienne"}, {"opco": "AFDAS", "idcc": "1480", "conv": "Convention collective nationale de travail des journalistes"}, {"opco": "AFDAS", "idcc": "0598", "conv": "Convention collective nationale de travail des ouvriers de la presse quotidienne régionale"}, {"opco": "AFDAS", "idcc": "3221", "conv": "Convention collective nationale des agences de presse"}, {"opco": "AFDAS", "idcc": "3230", "conv": "Convention collective nationale des employés de la presse d'information spécialisée"}, {"opco": "AFDAS", "idcc": "3225", "conv": "Convention collective nationale des employés et des cadres des éditeurs de la presse magazine"}, {"opco": "AFDAS", "idcc": "2683", "conv": "Convention collective nationale du portage de presse"}, {"opco": "AFDAS", "idcc": "2372", "conv": "Convention collective nationale des entreprises de la distribution directe"}, {"opco": "AFDAS", "idcc": "0086", "conv": "Convention collective nationale des entreprises de publicité et assimilées"}, {"opco": "AFDAS", "idcc": "3090", "conv": "Convention collective nationale des entreprises du secteur privé du spectacle vivant"}, {"opco": "AFDAS", "idcc": "2770", "conv": "Convention collective nationale de l'édition phonographique"}, {"opco": "AFDAS", "idcc": "2397", "conv": "Convention collective des mannequins adultes et enfants employés par les agences de mannequins"}, {"opco": "AFDAS", "idcc": "1922", "conv": "Convention collective nationale de la radiodiffusion"}, {"opco": "AFDAS", "idcc": "2411", "conv": "Convention collective nationale des chaînes thématiques"}, {"opco": "AFDAS", "idcc": "2717", "conv": "Convention collective nationale des entreprises techniques au service de la création et de l'événement"}, {"opco": "AFDAS", "idcc": "1285", "conv": "Convention collective nationale pour les entreprises artistiques et culturelles (SYNDEAC)"}, {"opco": "AFDAS", "idcc": "1631", "conv": "Convention collective nationale de l'hôtellerie de plein air"}, {"opco": "AFDAS", "idcc": "2021", "conv": "Convention collective nationale du golf"}, {"opco": "AFDAS", "idcc": "1909", "conv": "Convention collective nationale des organismes de tourisme"}, {"opco": "AFDAS", "idcc": "2511", "conv": "Convention collective nationale du sport"}, {"opco": "AFDAS", "idcc": "2148", "conv": "Convention collective nationale des télécommunications"}, {"opco": "AFDAS", "idcc": "1874", "conv": "Convention collective nationale des cadres, techniciens et agents de maîtrise de la presse d'information spécialisée"}, {"opco": "ATLAS", "idcc": "2335", "conv": "Convention collective nationale du personnel des agences générales d'assurances"}, {"opco": "ATLAS", "idcc": "2120", "conv": "Convention collective de la banque"}, {"opco": "ATLAS", "idcc": "3210", "conv": "Convention collective de la banque populaire"}, {"opco": "ATLAS", "idcc": "2247", "conv": "Convention collective des entreprises de courtage d'assurances et/ou de réassurances"}, {"opco": "ATLAS", "idcc": "0787", "conv": "Convention collective nationale des cabinets d'experts-comptables et de commissaires aux comptes"}, {"opco": "ATLAS", "idcc": "1486", "conv": "Convention collective nationale applicable au personnel des bureaux d'études techniques, cabinets d'ingénieurs-conseils et sociétés de conseils (BET, SYNTEC)"}, {"opco": "ATLAS", "idcc": "1801", "conv": "Convention collective nationale des sociétés d'assistance"}, {"opco": "ATLAS", "idcc": "2357", "conv": "Accord relatif aux cadres de direction des sociétés d'assurances"}, {"opco": "ATLAS", "idcc": "0653", "conv": "Convention collective de travail des producteurs salariés de base des services extérieurs de production des sociétés d'assurances"}, {"opco": "ATLAS", "idcc": "1679", "conv": "Convention collective nationale de l'inspection d'assurance"}, {"opco": "ATLAS", "idcc": "0438", "conv": "Convention collective nationale de travail des échelons intermédiaires des services extérieurs de production des sociétés d'assurances"}, {"opco": "ATLAS", "idcc": "1672", "conv": "Convention collective nationale des sociétés d'assurances"}, {"opco": "ATLAS", "idcc": "1468", "conv": "Convention collective de branche du Crédit mutuel"}, {"opco": "ATLAS", "idcc": "2931", "conv": "Convention collective nationale des activités de marchés financiers"}, {"opco": "ATLAS", "idcc": "0478", "conv": "Convention collective nationale des sociétés financières"}, {"opco": "ATLAS", "idcc": "3213", "conv": "Convention collective nationale des collaborateurs salariés des entreprises d'économistes de la construction et métreurs-vérificateurs"}, {"opco": "ATLAS", "idcc": "2543", "conv": "Convention collective nationale des cabinets ou entreprises de géomètres experts, géomètres topographes photogrammètres, experts-fonciers"}, {"opco": "ATLAS", "idcc": "2622", "conv": "Convention collective du crédit maritime mutuel"}, {"opco": "ATLAS", "idcc": "5505", "conv": "Branche des caisses d’épargne"}, {"opco": "ATLAS", "idcc": "2230", "conv": "Convention collective des associations agréées de surveillance de la qualité de l’air"}, {"opco": "Uniformation", "idcc": "3016", "conv": "Convention collective des ateliers chantiers d'insertion"}, {"opco": "Uniformation", "idcc": "1261", "conv": "Convention collective nationale des acteurs du lien social et familial (SNAECSO)"}, {"opco": "Uniformation", "idcc": "2941", "conv": "Convention collective de la branche de l'aide, de l'accompagnement, des soins et des services à domicile"}, {"opco": "Uniformation", "idcc": "1518", "conv": "Convention collective nationale de l'animation"}, {"opco": "Uniformation", "idcc": "1278", "conv": "Convention collective nationale des personnels PACT et ARIM"}, {"opco": "Uniformation", "idcc": "2336", "conv": "Convention collective nationale des organismes gestionnaires de foyers et services pour jeunes travailleurs"}, {"opco": "Uniformation", "idcc": "1794", "conv": "Convention collective nationale du personnel des institutions de retraites complémentaires"}, {"opco": "Uniformation", "idcc": "2190", "conv": "Convention collective nationale des missions locales et PAIO des maisons de l'emploi et PLIE"}, {"opco": "Uniformation", "idcc": "2128", "conv": "Convention collective nationale de la mutualité"}, {"opco": "Uniformation", "idcc": "3220", "conv": "Convention collective nationale des offices publics de l'habitat"}, {"opco": "Uniformation", "idcc": "2526", "conv": "Convention collective nationale des organisations professionnelles de l'habitat social"}, {"opco": "Uniformation", "idcc": "2847", "conv": "Convention collective nationale de Pôle Emploi"}, {"opco": "Uniformation", "idcc": "3105", "conv": "Convention collective nationale des régies de quartier"}, {"opco": "Uniformation", "idcc": "2603", "conv": "Convention collective nationale de travail des praticiens conseils du régime général de sécurité sociale"}, {"opco": "Uniformation", "idcc": "2798", "conv": "Convention collective des employés et cadres du régime social des indépendants"}, {"opco": "Uniformation", "idcc": "2796", "conv": "Convention collective du personnel de direction du régime social des indépendants"}, {"opco": "Uniformation", "idcc": "2797", "conv": "Convention collective nationale spéciale de travail des praticiens conseils du régime social des indépendants"}, {"opco": "Uniformation", "idcc": "1588", "conv": "Convention collective du personnel des sociétés coopératives d'HLM"}, {"opco": "Uniformation", "idcc": "1316", "conv": "Convention collective nationale des organismes de tourisme social et familial"}, {"opco": "Uniformation", "idcc": "1031", "conv": "Convention collective nationale de la fédération nationale des associations familiales rurales (FNAFR)"}, {"opco": "Uniformation", "idcc": "2150", "conv": "Convention collective nationale des personnels des sociétés anonymes et fondations d'HLM"}, {"opco": "Uniformation", "idcc": "2793", "conv": "Convention collective de travail des agents de direction et agents-comptables des organismes de sécurité sociale et d'allocations familiales"}, {"opco": "Uniformation", "idcc": "0218", "conv": "Convention collective nationale des organismes de sécurité sociale"}, {"opco": "Uniformation", "idcc": "2768", "conv": "Convention collective nationale de travail des pharmaciens du régime minier"}, {"opco": "Uniformation", "idcc": "2727", "conv": "Convention collective nationale des omnipraticiens exerçant dans les centres de santé miniers"}, {"opco": "Uniformation", "idcc": "2668", "conv": "Convention collective nationale de travail des cadres supérieurs des sociétés de secours minières"}, {"opco": "Uniformation", "idcc": "2666", "conv": "Convention collective nationale des conseils d'architecture, d'urbanisme et de l'environnement"}, {"opco": "AKTO", "idcc": "3043", "conv": "Convention collective nationale des entreprises de propreté et services associés"}, {"opco": "AKTO", "idcc": "1413", "conv": "Accord national professionnel relatif aux salariés permanents des entreprises de travail temporaire"}, {"opco": "AKTO", "idcc": "2378", "conv": "Accords nationaux professionnels concernant le personnel intérimaire des entreprises de travail temporaire"}, {"opco": "AKTO", "idcc": "2002", "conv": "Convention collective interrégionale de la blanchisserie, laverie, location de linge, nettoyage à sec, pressing et teinturerie"}, {"opco": "AKTO", "idcc": "2691", "conv": "Convention collective nationale de l'enseignement privé indépendant (hors contrat)"}, {"opco": "AKTO", "idcc": "1351", "conv": "Convention collective nationale des entreprises de prévention et de sécurité"}, {"opco": "AKTO", "idcc": "0275", "conv": "Convention collective nationale du personnel au sol des entreprises de transport aérien"}, {"opco": "AKTO", "idcc": "3218", "conv": "Convention collective nationale de l'enseignement privé non lucratif (EPNL)"}, {"opco": "AKTO", "idcc": "0573", "conv": "Convention collective nationale des commerces de gros"}, {"opco": "AKTO", "idcc": "0731", "conv": "Convention collective nationale des commerces de quincaillerie, fournitures industrielles, fers, métaux et équipement de la maison, cadres"}, {"opco": "AKTO", "idcc": "1383", "conv": "Convention collective nationale des commerces de quincaillerie, fournitures industrielles, fers, métaux et équipement de la maison, employés et personnels de maîtrise"}, {"opco": "AKTO", "idcc": "1979", "conv": "Convention collective nationale des hôtels, cafés, restaurants (HCR)"}, {"opco": "AKTO", "idcc": "1391", "conv": "Convention collective régionale du personnel de l'industrie, de la manutention et du nettoyage sur les aéroports de la région parisienne"}, {"opco": "AKTO", "idcc": "3219", "conv": "Convention collective nationale de branche des salariés en portage salarial"}, {"opco": "AKTO", "idcc": "2060", "conv": "Convention collective nationale des chaînes de cafétérias et assimilés"}, {"opco": "AKTO", "idcc": "2147", "conv": "Convention collective des entreprises des services d'eau et d'assainissement"}, {"opco": "AKTO", "idcc": "2583", "conv": "Convention collective nationale des sociétés concessionnaires ou exploitantes d'autoroutes ou d'ouvrages routiers"}, {"opco": "AKTO", "idcc": "1944", "conv": "Convention collective nationale du personnel navigant technique des exploitants d'hélicoptères"}, {"opco": "AKTO", "idcc": "1671", "conv": "Convention collective nationale des maisons d'étudiants"}, {"opco": "AKTO", "idcc": "1516", "conv": "Convention collective nationale des organismes de formation"}, {"opco": "AKTO", "idcc": "7520", "conv": "Convention collective nationale de l'enseignement agricole privé (CNEAP)"}, {"opco": "AKTO", "idcc": "2101", "conv": "Convention collective nationale de l'enseignement privé à distance"}, {"opco": "AKTO", "idcc": "1311", "conv": "Convention collective nationale de la restauration ferroviaire"}, {"opco": "AKTO", "idcc": "7509", "conv": "Convention collective nationale des organismes de formation et de promotion agricoles"}, {"opco": "AKTO", "idcc": "2408", "conv": "Convention collective nationale des personnels des services administratifs et économiques, personnels d'éducation et documentalistes des établissements d'enseignement privés"}, {"opco": "AKTO", "idcc": "0635", "conv": "Convention collective nationale du négoce en fournitures dentaires"}, {"opco": "AKTO", "idcc": "1501", "conv": "Convention collective nationale de la restauration rapide"}, {"opco": "AKTO", "idcc": "1266", "conv": "Convention collective nationale du personnel des entreprises de restauration de collectivités"}, {"opco": "AKTO", "idcc": "2149", "conv": "Convention collective nationale des activités du déchet"}, {"opco": "AKTO", "idcc": "0158", "conv": "Convention collective nationale du travail mécanique du bois, scieries, négoce et importation des bois"}, {"opco": "OCAPIAT", "idcc": "2494", "conv": "Convention collective nationale de la coopération maritime"}, {"opco": "OCAPIAT", "idcc": "7001", "conv": "Convention collective nationale des coopératives et SICA de production, transformation et vente du bétail et des viandes"}, {"opco": "OCAPIAT", "idcc": "7003", "conv": "Convention collective nationale des coopératives agricoles, unions et SICA fabriquant conserves de fruits et légumes, plats cuisinés et spécialités"}, {"opco": "OCAPIAT", "idcc": "7006", "conv": "Convention collective nationale des coopératives, unions et SICA de fleurs, fruits et légumes et pommes de terre"}, {"opco": "OCAPIAT", "idcc": "7004", "conv": "Convention collective nationale des coopératives laitières, unions de coopératives laitières et SICA laitières"}, {"opco": "OCAPIAT", "idcc": "7503", "conv": "Convention collective nationale des distilleries coopératives viticoles et SICA de distillation"}, {"opco": "OCAPIAT", "idcc": "7002", "conv": "Convention collective nationale des coopératives et SICA de céréales, meunerie, approvisionnement, alimentation du bétail et oléagineux"}, {"opco": "OCAPIAT", "idcc": "3109", "conv": "Convention collective nationale des 5 branches industries alimentaires diverses"}, {"opco": "OCAPIAT", "idcc": "1513", "conv": "Convention collective nationale des activités de production des eaux embouteillées, boissons rafraîchissantes sans alcool et bière"}, {"opco": "OCAPIAT", "idcc": "1747", "conv": "Convention collective des activités industrielles de boulangerie et pâtisserie"}, {"opco": "OCAPIAT", "idcc": "1586", "conv": "Convention collective nationale de l'industrie de la salaison, charcuterie en gros et conserves de viandes"}, {"opco": "OCAPIAT", "idcc": "1938", "conv": "Convention collective nationale des industries de la transformation des volailles"}, {"opco": "OCAPIAT", "idcc": "0200", "conv": "Convention collective nationale des exploitations frigorifiques"}, {"opco": "OCAPIAT", "idcc": "0112", "conv": "Convention collective nationale de l'industrie laitière"}, {"opco": "OCAPIAT", "idcc": "2075", "conv": "Convention collective nationale des centres immatriculés de conditionnement, commercialisation et transformation des œufs et produits d'œufs"}, {"opco": "OCAPIAT", "idcc": "1987", "conv": "Convention collective nationale des pâtes alimentaires sèches et du couscous non préparé"}, {"opco": "OCAPIAT", "idcc": "1396", "conv": "Convention collective nationale pour les industries de produits alimentaires élaborés"}, {"opco": "OCAPIAT", "idcc": "2728", "conv": "Convention collective nationale des sucreries, sucreries-distilleries et raffineries de sucre"}, {"opco": "OCAPIAT", "idcc": "1534", "conv": "Convention collective nationale des entreprises de l'industrie et des commerces en gros des viandes"}, {"opco": "OCAPIAT", "idcc": "1077", "conv": "Convention collective nationale des entreprises du négoce et de l'industrie des produits du sol, engrais et produits connexes"}, {"opco": "OCAPIAT", "idcc": "5619", "conv": "Convention collective nationale de la pêche professionnelle maritime"}, {"opco": "OCAPIAT", "idcc": "0493", "conv": "Convention collective nationale des vins, cidres, jus de fruits, sirops, spiritueux et liqueurs de France"}, {"opco": "OCAPIAT", "idcc": "3203", "conv": "Convention collective des structures associatives de pêche de loisir et de protection du milieu aquatique"}, {"opco": "OCAPIAT", "idcc": "7019", "conv": "Convention collective nationale de la conchyliculture"}, {"opco": "OCAPIAT", "idcc": "7005", "conv": "Convention collective nationale des caves coopératives et de leurs unions élargie aux SICA vinicoles"}, {"opco": "OCAPIAT", "idcc": "7007", "conv": "Convention collective nationale des coopératives, unions et SICA de teillage de lin"}, {"opco": "OCAPIAT", "idcc": "7021", "conv": "Convention collective nationale des entreprises relevant de la sélection et de la reproduction animale"}, {"opco": "OCAPIAT", "idcc": "7014", "conv": "Convention collective nationale des établissements d'entraînement des chevaux de courses au galop"}, {"opco": "OCAPIAT", "idcc": "7013", "conv": "Convention collective nationale des établissements d'entraînement des chevaux de courses au trot"}, {"opco": "OCAPIAT", "idcc": "1930", "conv": "Convention collective nationale des métiers de la transformation des grains (ex meunerie)"}, {"opco": "OCAPIAT", "idcc": "7008", "conv": "Convention collective nationale du personnel des organismes de contrôle laitier"}, {"opco": "OCAPIAT", "idcc": "7020", "conv": "Convention collective nationale du réseau des centres d'économie rurale"}, {"opco": "OCAPIAT", "idcc": "1659", "conv": "Convention collective nationale du rouissage teillage du lin"}, {"opco": "OCAPIAT", "idcc": "8435", "conv": "Convention collective régionale des coopératives fruitières Ain Doubs Jura"}, {"opco": "OCAPIAT", "idcc": "7502", "conv": "Convention collective nationale de la Mutualité sociale agricole"}, {"opco": "OCAPIAT", "idcc": "7501", "conv": "Convention collective nationale des caisses régionales du crédit agricole"}, {"opco": "OCAPIAT", "idcc": "7017", "conv": "Convention collective nationale des parcs et jardins zoologiques ouverts au public"}, {"opco": "OCAPIAT", "idcc": "7010", "conv": "Convention collective nationale du personnel des élevages aquacoles"}, {"opco": "OCAPIAT", "idcc": "7009", "conv": "Convention collective nationale des entreprises d'accouvage et de sélection de produits avicoles"}, {"opco": "OCAPIAT", "idcc": "8115", "conv": "Convention collective régionale des hippodromes Île-de-France Cabourg Caen Chantilly Deauville"}, {"opco": "OCAPIAT", "idcc": "7018", "conv": "Convention collective nationale des entreprises du paysage"}, {"opco": "OCAPIAT", "idcc": "7012", "conv": "Convention collective nationale des centres équestres"}, {"opco": "OCAPIAT", "idcc": "7023", "conv": "Entreprises agricoles de déshydratation"}, {"opco": "OCAPIAT", "idcc": "7508", "conv": "Convention collective nationale des Maisons familiales rurales, instituts ruraux et centres"}, {"opco": "OCAPIAT", "idcc": "7515", "conv": "Convention collective nationale des sociétés d'aménagement foncier et d'établissement rural (SAFER)"}, {"opco": "OCAPIAT", "idcc": "7514", "conv": "Convention collective nationale des organismes de la Confédération paysanne"}, {"opco": "OCAPIAT", "idcc": "1405", "conv": "Convention collective nationale des entreprises d'expédition et d'exportation de fruits et légumes"}, {"opco": "OCAPIAT", "idcc": "7513", "conv": "Convention collective nationale des centres d'initiatives pour valoriser l'agriculture et le milieu rural"}, {"opco": "Constructys", "idcc": "1597", "conv": "Convention collective nationale des ouvriers employés par les entreprises du bâtiment non visées par le décret du 1er mars 1962"}, {"opco": "Constructys", "idcc": "1596", "conv": "Convention collective nationale des ouvriers employés par les entreprises du bâtiment visées par le décret du 1er mars 1962"}, {"opco": "Constructys", "idcc": "2420", "conv": "Convention collective nationale des cadres du bâtiment"}, {"opco": "Constructys", "idcc": "2609", "conv": "Convention collective nationale des employés, techniciens et agents de maîtrise du bâtiment"}, {"opco": "Constructys", "idcc": "3216", "conv": "Convention collective nationale des salariés du négoce des matériaux de construction"}, {"opco": "Constructys", "idcc": "1947", "conv": "Convention collective nationale du négoce de bois d'œuvre et produits dérivés"}, {"opco": "Constructys", "idcc": "3212", "conv": "Convention collective nationale des cadres des travaux publics"}, {"opco": "Constructys", "idcc": "2614", "conv": "Convention collective nationale des employés, techniciens et agents de maîtrise des travaux publics"}, {"opco": "Constructys", "idcc": "1702", "conv": "Convention collective nationale des ouvriers de travaux publics"}, {"opco": "Opcommerce", "idcc": "1606", "conv": "Convention collective nationale du bricolage, vente au détail en libre-service"}, {"opco": "Opcommerce", "idcc": "0500", "conv": "Convention collective nationale des commerces de gros de l'habillement, mercerie, chaussure et jouet"}, {"opco": "Opcommerce", "idcc": "2198", "conv": "Convention collective nationale des entreprises de vente à distance"}, {"opco": "Opcommerce", "idcc": "2216", "conv": "Convention collective nationale du commerce de détail et de gros à prédominance alimentaire"}, {"opco": "Opcommerce", "idcc": "1487", "conv": "Convention collective nationale du commerce de détail de l'horlogerie-bijouterie"}, {"opco": "Opcommerce", "idcc": "1505", "conv": "Convention collective nationale du commerce de détail de fruits et légumes, épicerie et produits laitiers"}, {"opco": "Opcommerce", "idcc": "1517", "conv": "Convention collective nationale des commerces de détail non alimentaires"}, {"opco": "Opcommerce", "idcc": "1557", "conv": "Convention collective nationale du commerce des articles de sports et d'équipements de loisirs"}, {"opco": "Opcommerce", "idcc": "0675", "conv": "Convention collective nationale des maisons à succursales de vente au détail d'habillement"}, {"opco": "Opcommerce", "idcc": "0468", "conv": "Convention collective du commerce succursaliste de la chaussure"}, {"opco": "Opcommerce", "idcc": "1686", "conv": "Convention collective nationale des commerces et services de l'audiovisuel, électronique et équipement ménager"}, {"opco": "Opcommerce", "idcc": "3205", "conv": "Convention collective nationale du personnel des coopératives de consommation"}, {"opco": "Opcommerce", "idcc": "2156", "conv": "Convention collective nationale des grands magasins et magasins populaires"}, {"opco": "Opcommerce", "idcc": "0043", "conv": "Convention collective nationale des entreprises de commerce et de commission importation exportation"}, {"opco": "Opcommerce", "idcc": "1880", "conv": "Convention collective nationale du négoce de l'ameublement"}, {"opco": "Opcommerce", "idcc": "1539", "conv": "Convention collective nationale des commerces de détail de papeterie, fournitures de bureau, bureautique, informatique et librairie"}, {"opco": "Opcommerce", "idcc": "3168", "conv": "Convention collective nationale des professions de la photographie"}, {"opco": "Opcommerce", "idcc": "1760", "conv": "Convention collective nationale des jardineries et graineteries"}, {"opco": "Opcommerce", "idcc": "1431", "conv": "Convention collective nationale de l'optique-lunetterie de détail"}, {"opco": "Opcommerce", "idcc": "1314", "conv": "Convention collective nationale des maisons d'alimentation à succursales, supermarchés, hypermarchés, gérants mandataires"}, {"opco": "Opcommerce", "idcc": "0706", "conv": "Convention collective nationale du personnel de la reprographie"}, {"opco": "OPCO 2i", "idcc": "0045", "conv": "Convention collective nationale du caoutchouc"}, {"opco": "OPCO 2i", "idcc": "0044", "conv": "Convention collective nationale des industries chimiques et connexes"}, {"opco": "OPCO 2i", "idcc": "1411", "conv": "Convention collective nationale de la fabrication de l'ameublement"}, {"opco": "OPCO 2i", "idcc": "2089", "conv": "Convention collective nationale de l'industrie des panneaux à base de bois"}, {"opco": "OPCO 2i", "idcc": "5001", "conv": "Statut des industries électriques et gazières"}, {"opco": "OPCO 2i", "idcc": "1170", "conv": "Convention collective nationale de l'industrie des tuiles et briques"}, {"opco": "OPCO 2i", "idcc": "0211", "conv": "Convention collective nationale des cadres des industries de carrières et matériaux (UNICEM)"}, {"opco": "OPCO 2i", "idcc": "0135", "conv": "Convention collective nationale des ETAM des industries de carrières et matériaux"}, {"opco": "OPCO 2i", "idcc": "3151", "conv": "Convention collective nationale des industries de la fabrication de la chaux"}, {"opco": "OPCO 2i", "idcc": "0087", "conv": "Convention collective nationale des ouvriers des industries de carrières et matériaux"}, {"opco": "OPCO 2i", "idcc": "0833", "conv": "Convention collective nationale du personnel ETDAM de l'industrie de la fabrication des ciments"}, {"opco": "OPCO 2i", "idcc": "0363", "conv": "Convention collective nationale du personnel ingénieurs et cadres de l'industrie de la fabrication des ciments"}, {"opco": "OPCO 2i", "idcc": "0832", "conv": "Convention collective nationale du personnel ouvrier de l'industrie de la fabrication des ciments"}, {"opco": "OPCO 2i", "idcc": "1558", "conv": "Convention collective nationale relative aux conditions de travail du personnel des industries céramiques de France"}, {"opco": "OPCO 2i", "idcc": "0489", "conv": "Convention collective du personnel des industries du cartonnage"}, {"opco": "OPCO 2i", "idcc": "0700", "conv": "Convention collective nationale des ingénieurs et cadres de la production des papiers, cartons et celluloses"}, {"opco": "OPCO 2i", "idcc": "0707", "conv": "Convention collective nationale des ingénieurs et cadres de la transformation des papiers cartons et pellicule cellulosique"}, {"opco": "OPCO 2i", "idcc": "1492", "conv": "Convention collective nationale des OEDTAM de la production des papiers, cartons et celluloses"}, {"opco": "OPCO 2i", "idcc": "1495", "conv": "Convention collective nationale des OEDTAM de la transformation des papiers, cartons et celluloses"}, {"opco": "OPCO 2i", "idcc": "1388", "conv": "Convention collective nationale de l'industrie du pétrole"}, {"opco": "OPCO 2i", "idcc": "1555", "conv": "Convention collective nationale de la fabrication et du commerce des produits à usage pharmaceutique, parapharmaceutique et vétérinaire"}, {"opco": "OPCO 2i", "idcc": "0176", "conv": "Convention collective nationale de l'industrie pharmaceutique"}, {"opco": "OPCO 2i", "idcc": "0292", "conv": "Convention collective nationale de la plasturgie"}, {"opco": "OPCO 2i", "idcc": "0637", "conv": "Convention collective des industries et du commerce de la récupération"}, {"opco": "OPCO 2i", "idcc": "0715", "conv": "Convention collective nationale des instruments à écrire et industries connexes"}, {"opco": "OPCO 2i", "idcc": "0018", "conv": "Convention collective nationale des industries textiles"}, {"opco": "OPCO 2i", "idcc": "0669", "conv": "Convention collective nationale des industries de fabrication mécanique du verre"}, {"opco": "OPCO 2i", "idcc": "1607", "conv": "Convention collective nationale des industries des jeux, jouets, articles de fêtes, puériculture, modélisme et industries connexes"}, {"opco": "OPCO 2i", "idcc": "0567", "conv": "Convention collective nationale de la bijouterie, joaillerie, orfèvrerie et activités rattachées"}, {"opco": "OPCO 2i", "idcc": "1580", "conv": "Convention collective nationale de l'industrie de la chaussure et des articles chaussants"}, {"opco": "OPCO 2i", "idcc": "2528", "conv": "Convention collective nationale des industries de la maroquinerie, articles de voyage, chasse sellerie, gainerie, bracelets en cuir"}, {"opco": "OPCO 2i", "idcc": "0247", "conv": "Convention collective nationale des industries de l'habillement"}, {"opco": "OPCO 2i", "idcc": "0303", "conv": "Convention collective régionale de la couture parisienne"}, {"opco": "OPCO 2i", "idcc": "1256", "conv": "Convention collective nationale des cadres, ingénieurs et assimilés des entreprises de gestion d'équipements thermiques et climatisation"}, {"opco": "OPCO 2i", "idcc": "0998", "conv": "Convention collective nationale des OETAM de l'exploitation d'équipements thermiques et de génie climatique"}, {"opco": "OPCO 2i", "idcc": "0083", "conv": "Convention collective nationale des menuiseries charpentes et constructions industrialisées et portes planes"}, {"opco": "OPCO 2i", "idcc": "1423", "conv": "Convention collective nationale des entreprises relevant de la navigation de plaisance"}, {"opco": "OPCO 2i", "idcc": "3224", "conv": "Convention collective nationale de la distribution des papiers-cartons ; commerce de gros"}, {"opco": "OPCO 2i", "idcc": "0925", "conv": "Convention collective nationale des ingénieurs et cadres de la distribution des papiers-cartons, commerce de gros"}, {"opco": "OPCO 2i", "idcc": "0802", "conv": "Convention collective nationale de la distribution de papiers-cartons commerces de gros pour OETAM"}, {"opco": "OPCO 2i", "idcc": "1821", "conv": "Convention collective nationale des professions regroupées du cristal, du verre et du vitrail"}, {"opco": "OPCO 2i", "idcc": "1044", "conv": "Convention collective nationale de l'horlogerie"}, {"opco": "OPCO 2i", "idcc": "0207", "conv": "Convention collective nationale de l'industrie des cuirs et peaux"}, {"opco": "OPCO Mobilités", "idcc": "0412", "conv": "Convention collective nationale de travail des guides accompagnateurs et accompagnateurs au service des agences de voyages et de tourisme"}, {"opco": "OPCO Mobilités", "idcc": "1710", "conv": "Convention collective nationale du personnel des agences de voyages et de tourisme"}, {"opco": "OPCO Mobilités", "idcc": "1536", "conv": "Convention collective nationale des distributeurs conseils hors domicile (entrepositaires-grossistes, bières, eaux minérales et de table, boissons gazeuses, non gazeuses, sirops, jus de fruits, CHD)"}, {"opco": "OPCO Mobilités", "idcc": "0779", "conv": "Convention collective de travail du personnel des voies ferrées d’intérêt local"}, {"opco": "OPCO Mobilités", "idcc": "3217", "conv": "Convention collective nationale ferroviaire"}, {"opco": "OPCO Mobilités", "idcc": "2972", "conv": "Convention collective du personnel sédentaire des entreprises de navigation"}, {"opco": "OPCO Mobilités", "idcc": "0003", "conv": "Convention collective nationale des ouvriers de la navigation intérieure de marchandises"}, {"opco": "OPCO Mobilités", "idcc": "1974", "conv": "Convention collective nationale du personnel des entreprises de transport de passagers en navigation intérieure"}, {"opco": "OPCO Mobilités", "idcc": "2174", "conv": "Convention collective nationale du personnel sédentaire des entreprises de transports de marchandises de la navigation intérieure"}, {"opco": "OPCO Mobilités", "idcc": "0538", "conv": "Convention collective nationale du personnel des entreprises de manutention ferroviaire et travaux connexes"}, {"opco": "OPCO Mobilités", "idcc": "5555", "conv": "Convention collective nationale des navigants d’exécution du remorquage maritime"}, {"opco": "OPCO Mobilités", "idcc": "3223", "conv": "Convention collective nationale des officiers des entreprises de transport et services maritimes"}, {"opco": "OPCO Mobilités", "idcc": "5554", "conv": "Convention collective nationale des officiers du remorquage maritime"}, {"opco": "OPCO Mobilités", "idcc": "5521", "conv": "Convention collective nationale du personnel navigant d’exécution du transport maritime"}, {"opco": "OPCO Mobilités", "idcc": "3017", "conv": "Convention collective nationale unifiée ports et manutention"}, {"opco": "OPCO Mobilités", "idcc": "1090", "conv": "Convention collective nationale des services de l’automobile"}, {"opco": "OPCO Mobilités", "idcc": "0016", "conv": "Convention collective nationale des transports routiers et activités auxiliaires du transport"}, {"opco": "OPCO Mobilités", "idcc": "1424", "conv": "Convention collective nationale des réseaux de transports publics urbains de voyageurs"}, {"opco": "OPCO Mobilités", "idcc": "5557", "conv": "Convention collective nationale des personnels navigants d’exécution des passages d’eau"}, {"opco": "OPCO Mobilités", "idcc": "5556", "conv": "Convention collective nationale des personnels officiers des passages d’eau"}, {"opco": "OPCO Mobilités", "idcc": "1182", "conv": "Convention collective nationale des personnels des ports de plaisance"}, {"opco": "OPCO Mobilités", "idcc": "3228", "conv": "Convention collective nationale du groupement des armateurs de service de passages d’eau - personnel navigant"}, {"opco": "OPCO EP", "idcc": "1605", "conv": "Convention collective nationale des entreprises de désinfection, désinsectisation, dératisation"}, {"opco": "OPCO EP", "idcc": "2395", "conv": "Convention collective nationale de travail des assistants maternels du particulier employeur"}, {"opco": "OPCO EP", "idcc": "2697", "conv": "Convention collective nationale des personnels des structures associatives cynégétiques"}, {"opco": "OPCO EP", "idcc": "1408", "conv": "Convention collective nationale des entreprises du négoce et de distribution de combustibles solides, liquides, gazeux et produits pétroliers"}, {"opco": "OPCO EP", "idcc": "0733", "conv": "Convention collective nationale des détaillants en chaussure"}, {"opco": "OPCO EP", "idcc": "1483", "conv": "Convention collective nationale du commerce de détail de l’habillement et des articles textiles"}, {"opco": "OPCO EP", "idcc": "0915", "conv": "Convention collective nationale des sociétés d’expertises et d’évaluations"}, {"opco": "OPCO EP", "idcc": "1412", "conv": "Convention collective nationale des entreprises d’installation sans fabrication, y compris entretien, réparation, dépannage de matériel aéraulique, thermique, frigorifique et connexes"}, {"opco": "OPCO EP", "idcc": "1527", "conv": "Convention collective nationale de l’immobilier"}, {"opco": "OPCO EP", "idcc": "0184", "conv": "Convention collective nationale de l’imprimerie de labeur et des industries graphiques"}, {"opco": "OPCO EP", "idcc": "3013", "conv": "Convention collective nationale de la librairie"}, {"opco": "OPCO EP", "idcc": "1611", "conv": "Convention collective nationale des entreprises de logistique de communication écrite directe"}, {"opco": "OPCO EP", "idcc": "1589", "conv": "Convention collective nationale des mareyeurs-expéditeurs"}, {"opco": "OPCO EP", "idcc": "1982", "conv": "Convention collective nationale du négoce et prestations de services dans les domaines médico-techniques"}, {"opco": "OPCO EP", "idcc": "1499", "conv": "Convention collective nationale de la miroiterie, de la transformation et du négoce du verre"}, {"opco": "OPCO EP", "idcc": "2098", "conv": "Convention collective nationale du personnel des prestataires de services dans le domaine du secteur tertiaire"}, {"opco": "OPCO EP", "idcc": "1512", "conv": "Convention collective nationale de la promotion immobilière"}, {"opco": "OPCO EP", "idcc": "0454", "conv": "Convention collective nationale des remontées mécaniques et domaines skiables"}, {"opco": "OPCO EP", "idcc": "2111", "conv": "Convention collective nationale des salariés du particulier employeur"}, {"opco": "OPCO EP", "idcc": "0614", "conv": "Convention collective nationale des industries de la sérigraphie et des procédés d’impression numérique connexes"}, {"opco": "OPCO EP", "idcc": "1404", "conv": "Convention collective nationale des entreprises de commerce, de location et de réparation de tracteurs, machines et matériels agricoles, de matériels de travaux publics, de bâtiment et de manutention, de matériels de motoculture de plaisance, de jardins et d’espaces verts (SEDIMA)"}, {"opco": "OPCO EP", "idcc": "3127", "conv": "Convention collective nationale des entreprises de services à la personne du 20 septembre 2012"}, {"opco": "OPCO EP", "idcc": "1043", "conv": "Convention collective nationale des gardiens, concierges et employés d’immeubles"}, {"opco": "OPCO EP", "idcc": "1996", "conv": "Convention collective nationale de la pharmacie d’officine"}, {"opco": "OPCO EP", "idcc": "1978", "conv": "Convention collective nationale des fleuristes, de la vente et des services des animaux familiers"}, {"opco": "OPCO EP", "idcc": "0843", "conv": "Convention collective nationale de la boulangerie-pâtisserie - entreprises artisanales"}, {"opco": "OPCO EP", "idcc": "0953", "conv": "Convention collective nationale de la charcuterie de détail"}, {"opco": "OPCO EP", "idcc": "1286", "conv": "Convention collective nationale des détaillants, détaillants-fabricants et artisans de la confiserie, chocolaterie, biscuiterie"}, {"opco": "OPCO EP", "idcc": "1267", "conv": "Convention collective nationale de la pâtisserie"}, {"opco": "OPCO EP", "idcc": "1504", "conv": "Convention collective nationale de la poissonnerie (commerce de détail, de demi-gros et de gros de la poissonnerie)"}, {"opco": "OPCO EP", "idcc": "0992", "conv": "Convention collective nationale de la boucherie, boucherie-charcuterie et boucherie hippophagique, triperie, commerce de volailles et gibiers"}, {"opco": "OPCO EP", "idcc": "1850", "conv": "Convention collective de l’avocat salarié"}, {"opco": "OPCO EP", "idcc": "1000", "conv": "Convention collective nationale du personnel des cabinets d’avocats"}, {"opco": "OPCO EP", "idcc": "1147", "conv": "Convention collective du personnel des cabinets médicaux (médecin)"}, {"opco": "OPCO EP", "idcc": "2785", "conv": "Convention collective nationale des sociétés de ventes volontaires de meubles aux enchères publiques et des offices de commissaires-priseurs judiciaires"}, {"opco": "OPCO EP", "idcc": "1619", "conv": "Convention collective nationale des cabinets dentaires"}, {"opco": "OPCO EP", "idcc": "1951", "conv": "Convention collective nationale des cabinets ou entreprises d’expertises en automobile"}, {"opco": "OPCO EP", "idcc": "0240", "conv": "Convention collective nationale du personnel des greffes des tribunaux de commerce"}, {"opco": "OPCO EP", "idcc": "0959", "conv": "Convention collective nationale des laboratoires de biologie médicale extra-hospitaliers"}, {"opco": "OPCO EP", "idcc": "0993", "conv": "Convention collective nationale des prothésistes dentaires et des personnels des laboratoires de prothèse dentaire"}, {"opco": "OPCO EP", "idcc": "0759", "conv": "Convention collective nationale des pompes funèbres"}, {"opco": "OPCO EP", "idcc": "1875", "conv": "Convention collective nationale des cabinets et cliniques vétérinaires : personnel salarié"}, {"opco": "OPCO EP", "idcc": "2564", "conv": "Convention collective nationale des vétérinaires praticiens salariés"}, {"opco": "OPCO EP", "idcc": "2596", "conv": "Convention collective nationale de la coiffure et des professions connexes"}, {"opco": "OPCO EP", "idcc": "3032", "conv": "Convention collective nationale de l’esthétique - cosmétique et de l’enseignement technique et professionnel liés aux métiers de l’esthétique et de la parfumerie"}, {"opco": "OPCO EP", "idcc": "2205", "conv": "Convention collective du notariat"}, {"opco": "OPCO EP", "idcc": "2219", "conv": "Convention collective des taxis - 4932Z"}, {"opco": "OPCO EP", "idcc": "2272", "conv": "Convention collective nationale de l’assainissement et de la maintenance industrielle"}, {"opco": "OPCO EP", "idcc": "1621", "conv": "Convention collective nationale de la répartition pharmaceutique"}, {"opco": "OPCO EP", "idcc": "2978", "conv": "Convention collective nationale du personnel salarié des agences de recherches privées"}, {"opco": "OPCO EP", "idcc": "2706", "conv": "Convention collective nationale du personnel des administrateurs et des mandataires judiciaires"}, {"opco": "OPCO EP", "idcc": "2329", "conv": "Accord professionnel national de travail entre les avocats au Conseil d’Etat et à la Cour de Cassation et leur personnel salarié - non avocat"}, {"opco": "OPCO EP", "idcc": "1921", "conv": "Convention collective nationale des huissiers de justice"}, {"opco": "OPCO EP", "idcc": "2332", "conv": "Convention nationale des entreprises d’architecture"}, {"opco": "OPCO Santé", "idcc": "0029", "conv": "Convention collective nationale des établissements privés d’hospitalisation, de soins, de cure et de garde à but non lucratif (FEHAP, convention de 1951)"}, {"opco": "OPCO Santé", "idcc": "2264", "conv": "Convention collective de l’hospitalisation privée"}, {"opco": "OPCO Santé", "idcc": "0783", "conv": "Convention collective des centres d’hébergement et de réadaptation sociale et dans les services d’accueil, d’orientation et d’insertion pour adultes (CHRS, SOP)"}, {"opco": "OPCO Santé", "idcc": "0413", "conv": "Convention collective nationale de travail des établissements et services pour personnes inadaptées et handicapées (convention de 1966, SNAPEI)"}, {"opco": "OPCO Santé", "idcc": "0405", "conv": "Convention collective nationale des établissements médico-sociaux de l’union intersyndicale des secteurs sanitaires et sociaux"}, {"opco": "OPCO Santé", "idcc": "1001", "conv": "Convention collective nationale des médecins spécialistes qualifiés au regard du conseil de l’ordre travaillant dans des établissements et services pour personnes inadaptées et handicapées"}, {"opco": "OPCO Santé", "idcc": "0897", "conv": "Convention collective nationale des services de santé au travail interentreprises"}, {"opco": "OPCO Santé", "idcc": "2046", "conv": "Convention collective nationale du personnel non médical des centres de lutte contre le cancer"}];
+
+function onIdccInput(val){
+  val = val.trim();
+  var opcoEl  = document.getElementById('f-opco-idcc');
+  var convEl  = document.getElementById('f-idcc-conv');
+  if(!val){
+    if(opcoEl) opcoEl.value = '';
+    if(convEl) convEl.value = '';
+    return;
+  }
+  var found = IDCC_BASE.find(function(d){ return parseInt(d.idcc,10) === parseInt(val,10); });
+  if(found){
+    if(opcoEl) opcoEl.value = found.opco;
+    if(convEl) convEl.value = found.conv;
+  } else {
+    if(opcoEl) opcoEl.value = 'IDCC non trouvé';
+    if(convEl) convEl.value = '';
+  }
+}
 
 function saveDB() {
   localStorage.setItem('tercicall_db', JSON.stringify(DB));
@@ -1044,7 +1087,7 @@ function renderRow(d) {
 }
 
 // ===================== PANEL =====================
-function openPanel(id) {
+function openPanel(id) { window._currentPanelId = id;
   const d = DB.find(x => x.id === id);
   if (!d) return;
   currentPanelId = id;
@@ -1112,7 +1155,7 @@ function renderPanelTab(tab) {
           <div class="info-item"><div class="info-item-label">Prénom</div><div class="info-item-val">${d.prenom||'—'}</div></div>
           <div class="info-item"><div class="info-item-label">Nom</div><div class="info-item-val">${d.nom||'—'}</div></div>
           <div class="info-item"><div class="info-item-label">Téléphone</div><div class="info-item-val">${d.tel ? `<a href="tel:${d.tel}">${d.tel}</a>` : '—'}</div></div>
-          <div class="info-item"><div class="info-item-label">Email</div><div class="info-item-val">${d.email ? `<a href="https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(d.email)}" target="_blank">${d.email}</a>` : '—'}</div></div>
+          <div class="info-item"><div class="info-item-label">Email</div><div class="info-item-val">${d.email ? `<a href="mailto:${d.email}">${d.email}</a>` : '—'}</div></div>
           <div class="info-item"><div class="info-item-label">Date de naissance</div><div class="info-item-val">${d.ddn||'—'}</div></div>
           <div class="info-item full">
             <div class="info-item-label">Adresse ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="maps-btn">📍 Voir sur Maps</a>` : ''}</div>
@@ -1121,7 +1164,7 @@ function renderPanelTab(tab) {
           ${d.notes ? `<div class="info-item full"><div class="info-item-label">Notes</div><div class="info-item-val" style="white-space:pre-wrap">${d.notes}</div></div>` : ''}
           ` : `
           <div class="info-item"><div class="info-item-label">Téléphone</div><div class="info-item-val">${d.tel ? `<a href="tel:${d.tel}">${d.tel}</a>` : '—'}</div></div>
-          <div class="info-item"><div class="info-item-label">Email</div><div class="info-item-val">${d.email ? `<a href="https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(d.email)}" target="_blank">${d.email}</a>` : '—'}</div></div>
+          <div class="info-item"><div class="info-item-label">Email</div><div class="info-item-val">${d.email ? `<a href="mailto:${d.email}">${d.email}</a>` : '—'}</div></div>
           <div class="info-item"><div class="info-item-label">SIRET</div><div class="info-item-val">${d.siret||'—'}</div></div>
           <div class="info-item"><div class="info-item-label">Code NAF</div><div class="info-item-val">${d.naf||'—'}</div></div><div class="info-item"><div class="info-item-label">Secteur</div><div class="info-item-val">${d.secteur||'—'}</div></div>
           <div class="info-item"><div class="info-item-label">Nb salariés</div><div class="info-item-val">${d.salaries||'—'}</div></div>
@@ -1161,9 +1204,9 @@ function renderPanelTab(tab) {
                 <div class="contact-avatar">${(c.nom||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
                 <div class="contact-info">
                   <div class="contact-name">${c.nom}</div>
-                  <div class="contact-detail">${c.poste||''} ${c.poste&&(c.tel||c.email)?'·':''} ${c.tel ? `<a href="tel:${c.tel}" style="color:var(--accent)">${c.tel}</a>` : ''} ${c.email ? `· <a href="https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(c.email)}" target="_blank" style="color:var(--accent)">${c.email}</a>` : ''}</div>
+                  <div class="contact-detail">${c.poste||''} ${c.poste&&(c.tel||c.email)?'·':''} ${c.tel ? `<a href="tel:${c.tel}" style="color:var(--accent)">${c.tel}</a>` : ''} ${c.email ? `· <a href="mailto:${c.email}" style="color:var(--accent)">${c.email}</a>` : ''}</div>
                 </div>
-                <button class="contact-del" onclick="deleteContact('${d.id}',${i})">✕</button>
+                <button onclick="editContact('${d.id}',${i})" style="width:28px;height:28px;border-radius:50%;border:none;background:#f59e0b;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;margin-right:4px" title="Modifier">✏️</button><button onclick="editContact('${d.id}',${i})" style="width:26px;height:26px;border-radius:50%;border:none;background:#f59e0b;color:#fff;font-size:11px;cursor:pointer;flex-shrink:0;margin-right:4px" title="Modifier">✏️</button><button class="contact-del" onclick="deleteContact('${d.id}',${i})">✕</button>
               </div>`).join('')}
         </div>
         <div style="margin-top:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
@@ -1329,6 +1372,13 @@ function renderPanelTab(tab) {
   }
 
   var renderStep;
+  if (tab === 'mails') {
+    var eNom   = encodeURIComponent(d.nom||'');
+    var eEmail = encodeURIComponent((d.contacts&&d.contacts[0]&&d.contacts[0].email)||d.email||'');
+    var ePrenom = encodeURIComponent((d.contacts&&d.contacts[0]&&d.contacts[0].nom)||'');
+    body.innerHTML = renderMailsTab(d, decodeURIComponent(eNom), decodeURIComponent(eEmail), decodeURIComponent(ePrenom));
+    return;
+  }
   if (tab === 'formations') {
     window._selectedFormations = new Set();
     const clientEmail = d.email || '';
@@ -1973,7 +2023,7 @@ function renderPanelTab(tab) {
           mailA.style.cssText='display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:8px;border:1px solid var(--border2);color:var(--accent);font-size:11px;text-decoration:none;cursor:pointer;';
           var subj='TerciForm - Suite de notre echange';
           var bod='Bonjour,\n\nSuite a notre echange, voici les informations demandees.\n\nBien cordialement,\nJonathan Ghizzo - TerciForm';
-          mailA.href='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(contactEmail)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(bod); mailA.target='_blank';
+          mailA.href='mailto:'+contactEmail+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(bod);
           mailA.textContent='Preparer un email a '+contactEmail;
           endBlock.appendChild(mailA);
         }
@@ -2329,6 +2379,26 @@ function addContact(id) {
   renderPanelTab('contacts');
 }
 
+
+function editContact(ficheId, idx) {
+  var d = DB.find(function(x){ return x.id === ficheId; });
+  if(!d || !d.contacts || !d.contacts[idx]) return;
+  var c = d.contacts[idx];
+  // Remplir le formulaire d'ajout avec les données existantes
+  document.getElementById('c-nom').value   = c.nom   || '';
+  document.getElementById('c-poste').value = c.poste || '';
+  document.getElementById('c-tel').value   = c.tel   || '';
+  document.getElementById('c-email').value = c.email || '';
+  // Supprimer l'ancien contact et mettre le focus sur le formulaire
+  d.contacts.splice(idx, 1);
+  saveDB();
+  renderPanel(ficheId, 'contacts');
+  document.getElementById('c-nom').focus();
+  // Petit indicateur visuel
+  var btn = document.querySelector('[onclick*="addContact"]');
+  if(btn){ btn.textContent = '💾 Mettre à jour'; setTimeout(function(){ btn.textContent = 'Ajouter'; }, 5000); }
+}
+
 function deleteContact(id, idx) {
   const d = DB.find(x => x.id === id);
   if (!d || !confirm('Supprimer ce contact ?')) return;
@@ -2423,7 +2493,7 @@ function openModal(mode, typeOrId) {
 }
 
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-function handleModalClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function handleModalClick(e) { /* Fermeture désactivée — utiliser Annuler */ }
 
 // ===================== MODAL PARTICULIER =====================
 let editingPartId = null;
@@ -2450,7 +2520,7 @@ function openModalPart(mode, id) {
   document.getElementById('fp-nom').focus();
 }
 function closeModalPart() { document.getElementById('modalOverlayPart').classList.remove('open'); }
-function handleModalClickPart(e) { if (e.target === document.getElementById('modalOverlayPart')) closeModalPart(); }
+function handleModalClickPart(e) { /* Fermeture désactivée — utiliser Annuler */ }
 
 function saveFichePart() {
   const nom = document.getElementById('fp-nom').value.trim();
@@ -2809,6 +2879,11 @@ function showApp() {
   if (currentUser.role === 'admin') {
     document.getElementById('btn-admin').style.display = 'inline-block';
   }
+  var btnObj = document.getElementById('btn-objectifs');
+  if(btnObj) btnObj.style.display = 'flex';
+  var btnStats = document.getElementById('btn-stats');
+  if(btnStats) btnStats.style.display = 'flex';
+  window._currentUser = currentUser;
 }
 
 // Check session existante
@@ -3112,7 +3187,7 @@ function envoyerFormations(formations, email, nom){
   body += '12 rue Marcel Sembat, 93400 Saint-Ouen-sur-Seine\n';
   body += 'NDA : 11931005093';
 
-  var gmailUrl='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);window.open(gmailUrl,'_blank');
+  window.open('mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
 }
 
 
@@ -3136,21 +3211,14 @@ tickClock();
 setInterval(tickClock,1000);
 
 
-var MOTIFS_HORS_DEFAULT=["Pas de budget formation","Financement OPCO refusé","Projet annulé","Déjà un prestataire","Structure trop petite","Dirigeant injoignable","On a déjà utilisé leur budget","Report indéfini","Cessation activité","Doublon fichier"];
-var MOTIFS_HORS_CUSTOM=JSON.parse(localStorage.getItem('tercicall_motifs_hors')||'[]');
-function getMotifsHors(){ return MOTIFS_HORS_DEFAULT.concat(MOTIFS_HORS_CUSTOM.filter(function(m){return MOTIFS_HORS_DEFAULT.indexOf(m)<0;})); }
-function saveMotifCustom(motif){
-  if(!motif||MOTIFS_HORS_DEFAULT.indexOf(motif)>=0||MOTIFS_HORS_CUSTOM.indexOf(motif)>=0) return;
-  MOTIFS_HORS_CUSTOM.push(motif);
-  localStorage.setItem('tercicall_motifs_hors',JSON.stringify(MOTIFS_HORS_CUSTOM));
-}
+var MOTIFS_HORS=["Pas de budget formation", "Financement OPCO refuse", "Projet annule", "Deja un prestataire", "Structure trop petite", "Dirigeant injoignable", "On a deja utilise leur budget", "Report indefini", "Cessation activite", "Doublon fichier"];
 function closeHorsModal(){var m=document.getElementById("hors-modal");if(m)m.remove();}
 function openHorsModal(fid){
   closeHorsModal();
   var ov=document.createElement("div");
   ov.id="hors-modal";
   ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center";
-  var chips=getMotifsHors().map(function(m){return "<span class=\"hmc\" data-v=\""+m+"\" onclick=\"pickHM(this)\" style=\"padding:5px 11px;border-radius:20px;border:1px solid #444;background:#111;color:#999;font-size:12px;cursor:pointer\">"+m+"</span>";}).join(" ");
+  var chips=MOTIFS_HORS.map(function(m){return "<span class=\"hmc\" data-v=\""+m+"\" onclick=\"pickHM(this)\" style=\"padding:5px 11px;border-radius:20px;border:1px solid #444;background:#111;color:#999;font-size:12px;cursor:pointer\">"+m+"</span>";}).join(" ");
   ov.innerHTML="<div style=\"background:#12151f;border:1px solid #333;border-radius:16px;padding:22px;width:400px;max-width:94vw\">"
     +"<div style=\"font-size:15px;font-weight:700;color:#ccc;margin-bottom:14px\">Mettre hors planning</div>"
     +"<div style=\"display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px\">"+chips+"</div>"
@@ -3174,20 +3242,18 @@ function pickHM(el){
   var v=el.getAttribute("data-v");
   var i=document.getElementById("hmc-inp");if(i)i.value=v;
   var row=document.getElementById("hmc-budget-row");
-  if(row) row.style.display=(v==="On a déjà utilisé leur budget")?"block":"none";
+  if(row) row.style.display=(v==="On a deja utilise leur budget")?"block":"none";
 }
 function confirmHors(fid){
   var i=document.getElementById("hmc-inp");
   var motif=i?i.value.trim():"";
   if(!motif){alert("Choisissez ou saisissez un motif.");return;}
   var annee=document.getElementById("hmc-annee")?document.getElementById("hmc-annee").value.trim():"";
-  if(motif==="On a déjà utilisé leur budget"&&annee) motif+=" ("+annee+")";
-  saveMotifCustom(motif);
+  if(motif==="On a deja utilise leur budget"&&annee) motif+=" ("+annee+")";
   var d=DB.find(function(x){return x.id===fid;});
   if(!d)return;
   d.status="hors";
   d.actions=d.actions||[];
-  d.actions.push({date:now(),text:"Statut → Hors planning"});
   d.actions.push({date:now(),text:"Hors planning - "+motif});
   if(!d.horsMotifs)d.horsMotifs=[];
   d.horsMotifs.push(motif);
@@ -3275,7 +3341,7 @@ function statsNavMonth(d) {
 
 function getStatsForDay(y, m, d) {
   var dateStr = y+'-'+(m+1)+'-'+d;
-  var result = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0,horsMotifMap:{}};
+  var result = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
 
   DB.forEach(function(fiche) {
     var actions = fiche.actions||[];
@@ -3286,27 +3352,21 @@ function getStatsForDay(y, m, d) {
       if(fd === dateStr) result.v++;
     }
 
-    // Transitions de statut ce jour
+    // Transitions de statut ce jour — on cherche dans les actions
+    // "Statut → Qualifié", "Statut → Négocié", etc.
+    // On prend la DERNIERE transition du jour pour chaque fiche (snapshot final)
     var lastTransition = null;
-    var lastHorsMotif = null;
     actions.forEach(function(a) {
       var aDate = parseDateStr(a.date);
       if(aDate !== dateStr) return;
       var t = a.text||'';
       if(t.indexOf('Statut') === 0) lastTransition = t;
-      // Capturer le motif hors planning associé à ce jour
-      if(t.indexOf('Hors planning - ') === 0) lastHorsMotif = t.replace('Hors planning - ','');
     });
     if(lastTransition) {
       if(lastTransition.indexOf('Qualifi') > 0) result.q++;
       else if(lastTransition.indexOf('goci') > 0) result.ng++;
       else if(lastTransition.indexOf('prestation') > 0) result.c1++;
-      else if(lastTransition.indexOf('Hors planning') > 0) {
-        result.ho++;
-        if(lastHorsMotif){
-          result.horsMotifMap[lastHorsMotif]=(result.horsMotifMap[lastHorsMotif]||0)+1;
-        }
-      }
+      else if(lastTransition.indexOf('Hors planning') > 0) result.ho++;
     }
 
     // Actions réalisées ce jour
@@ -3447,70 +3507,6 @@ function statsSelectDay(d,m,y){
 
 function pct(a,b){if(!b)return '—';return Math.round(a/b*100)+'%';}
 
-function openHorsStatsModal(ho, v, motifMap){
-  var old=document.getElementById('hors-stats-modal');if(old)old.remove();
-  var total=ho||0;
-  var taux=v?Math.round(total/v*100)+'%':'—';
-  // Trier motifs par fréquence
-  var motifs=Object.keys(motifMap||{}).sort(function(a,b){return (motifMap[b]||0)-(motifMap[a]||0);});
-  var rows='';
-  if(motifs.length===0){
-    rows='<div style="color:#666;font-size:12px;text-align:center;padding:12px">Aucun motif enregistré sur cette période</div>';
-  } else {
-    motifs.forEach(function(m){
-      var n=motifMap[m]||0;
-      var p=total?Math.round(n/total*100):0;
-      var barW=Math.max(4,p);
-      rows+='<div style="margin-bottom:10px">'
-        +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
-        +'<span style="font-size:12px;color:#ccc">'+m+'</span>'
-        +'<span style="font-size:12px;color:#888;white-space:nowrap;margin-left:8px">'+n+' · '+p+'%</span>'
-        +'</div>'
-        +'<div style="height:6px;border-radius:3px;background:#1a1a1a;overflow:hidden">'
-        +'<div style="height:100%;border-radius:3px;background:#555;width:'+barW+'%"></div>'
-        +'</div>'
-        +'</div>';
-    });
-  }
-  var ov=document.createElement('div');
-  ov.id='hors-stats-modal';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center';
-  ov.innerHTML='<div style="background:#12151f;border:1px solid #333;border-radius:16px;padding:22px;width:420px;max-width:94vw;max-height:80vh;overflow-y:auto">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'
-    +'<div style="font-size:15px;font-weight:700;color:#ccc">⬛ Analyse Hors planning</div>'
-    +'<button onclick="document.getElementById(\'hors-stats-modal\').remove()" style="background:none;border:none;color:#666;font-size:18px;cursor:pointer;line-height:1">×</button>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
-    +'<div style="background:#1a1a1a;border-radius:10px;padding:12px;text-align:center">'
-    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Total hors planning</div>'
-    +'<div style="font-size:24px;font-weight:700;color:#888">'+total+'</div>'
-    +'</div>'
-    +'<div style="background:#1a1a1a;border-radius:10px;padding:12px;text-align:center">'
-    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Taux / vierges créées</div>'
-    +'<div style="font-size:24px;font-weight:700;color:#888">'+taux+'</div>'
-    +'</div>'
-    +'</div>'
-    +'<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;font-weight:600">Répartition par motif</div>'
-    +rows
-    +'</div>';
-  document.body.appendChild(ov);
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-}
-
-function statCardHors(label,val,color,pctTotal,motifCounts,vierges){
-  var btnId='hors-stats-btn-'+Date.now();
-  // On passe les données via attributs data pour éviter les closures complexes
-  var dataStr=encodeURIComponent(JSON.stringify({ho:val,v:vierges||0,m:motifCounts||{}}));
-  return '<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;position:relative">'
-    +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between">'
-    +'<span style="display:flex;align-items:center;gap:4px">'+label+'</span>'
-    +'<button onclick=\'var d=JSON.parse(decodeURIComponent("'+dataStr+'"));openHorsStatsModal(d.ho,d.v,d.m)\' title="Détail des motifs" style="background:#222;border:1px solid #444;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;color:#999;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">?</button>'
-    +'</div>'
-    +'<div style="font-size:20px;font-weight:700;color:'+color+'">'+val+'</div>'
-    +(pctTotal&&pctTotal!=='—'?'<div style="font-size:10px;color:'+color+';margin-top:2px;opacity:0.8">'+pctTotal+' des appels</div>':'')
-    +'</div>';
-}
-
 function statCard(label,val,color,sub){
   return '<div style="background:var(--bg3);border-radius:10px;padding:10px 12px">'
     +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:4px">'+label+'</div>'
@@ -3523,29 +3519,14 @@ function sw(color,border){
   return '<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:'+color+';border:1px solid '+(border||'rgba(0,0,0,0.2)')+';flex-shrink:0"></span>';
 }
 
-function mergeStats(tot, s){
-  for(var k in tot){
-    if(k==='horsMotifMap') continue;
-    tot[k]+=s[k]||0;
-  }
-  if(s.horsMotifMap){
-    Object.keys(s.horsMotifMap).forEach(function(m){
-      tot.horsMotifMap[m]=(tot.horsMotifMap[m]||0)+s.horsMotifMap[m];
-    });
-  }
-  return tot;
-}
-
-function newTot(){ return {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0,horsMotifMap:{}}; }
-
 function renderStatsDetail(){
   var el=document.getElementById('stats-detail');
   if(!el) return;
   if(!_statsSel){el.innerHTML=renderPeriodSummary();return;}
   if(_statsSel.type==='week'){
     var wdays=getWeekDays(_statsSel.y,_statsSel.m,_statsSel.ref);
-    var tot=newTot();
-    wdays.forEach(function(day){var s=getStatsForDay(day.y,day.m,day.d);mergeStats(tot,s);});
+    var tot={v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
+    wdays.forEach(function(day){var s=getStatsForDay(day.y,day.m,day.d);for(var k in tot)tot[k]+=s[k];});
     var d1=wdays[0],d7=wdays[6];
     var label='Semaine du '+d1.d+' '+STATS_MONTHS[d1.m]+' au '+d7.d+' '+STATS_MONTHS[d7.m]+' '+d7.y;
     el.innerHTML=renderSummaryBloc(tot,label,true);return;
@@ -3568,7 +3549,7 @@ function renderSummaryBloc(s,label,showExport){
     +statCard(sw('#e8a0c0')+' Qualifiées',s.q,'#e8a0c0','Taux qualif : '+pct(s.q,s.v))
     +statCard(sw('#7b2d8b')+' Négociées',s.ng,'#a855f7','Taux négo : '+pct(s.ng,s.q))
     +statCard(sw('#4a90d9')+' 1ère presta',s.c1,'#4a90d9','Taux closing : '+pct(s.c1,s.ng))
-    +statCardHors(sw('#1c1c1c','#555')+' Hors planning',s.ho,'var(--text3)',pct(s.ho,s.ap),s.horsMotifMap,s.v)
+    +statCard(sw('#1c1c1c','#555')+' Hors planning',s.ho,'var(--text3)',null)
     +'</div></div>'
     +'<div style="padding:14px 16px;border-bottom:1px solid var(--border)">'
     +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;font-weight:600">Actions réalisées</div>'
@@ -3586,7 +3567,9 @@ function renderSummaryBloc(s,label,showExport){
     +statCard('Rappels planifiés',s.rp,'var(--text)',pct(s.rp,s.ap)+' des appels')
     +statCard('RDV planifiés',s.rr,'var(--text)',pct(s.rr,s.ap)+' des appels')
     +statCard('Visios planifiées',s.rv2,'var(--text)',pct(s.rv2,s.ap)+' des appels')
-    +'</div></div></div>';
+    +'</div></div>'
+    +renderObjectifsBar(s)
+    +'</div>';
 }
 
 function exportStatsCSVWeek(){
@@ -3628,10 +3611,10 @@ function getPeriodDays(){
 
 function renderPeriodSummary(){
   var days=getPeriodDays();
-  var tot=newTot();
+  var tot={v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
   days.forEach(function(day){
     var s=getStatsForDay(day.y,day.m,day.d);
-    mergeStats(tot,s);
+    for(var k in tot) tot[k]+=s[k];
   });
   var label=_statsView==='semaine'?'Semaine en cours':'Mois de '+STATS_MONTHS[_statsMonth];
   return '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">'
@@ -3646,7 +3629,7 @@ function renderPeriodSummary(){
     +statCard(sw('#e8a0c0')+' Qualifiées',tot.q,'#e8a0c0','Taux qualif : '+pct(tot.q,tot.v))
     +statCard(sw('#7b2d8b')+' Négociées',tot.ng,'#a855f7','Taux négo : '+pct(tot.ng,tot.q))
     +statCard(sw('#4a90d9')+' 1ère presta',tot.c1,'#4a90d9','Taux closing : '+pct(tot.c1,tot.ng))
-    +statCardHors(sw('#1c1c1c','#555')+' Hors planning',tot.ho,'var(--text3)',pct(tot.ho,tot.ap),tot.horsMotifMap,tot.v)
+    +statCard(sw('#1c1c1c','#555')+' Hors planning',tot.ho,'var(--text3)',null)
     +'</div></div>'
     +'<div style="padding:14px 16px;border-bottom:1px solid var(--border)">'
     +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;font-weight:600">Actions</div>'
@@ -3694,6 +3677,60 @@ function getNAFOpco(naf){
   if(!naf) return '';
   var code = naf.trim().toUpperCase().replace(/[^0-9A-Z]/g,'').substring(0,4);
   return OPCO_NAF[code] || '';
+}
+
+function lookupSiret(){
+  var siret = document.getElementById('f-siret').value.replace(/[\s.]/g,'');
+  var status = document.getElementById('siret-status');
+  var btn = document.getElementById('siret-btn');
+  if(!siret || siret.length < 9){
+    status.style.color='#e57373';
+    status.textContent='⚠️ Saisissez un SIRET ou SIREN valide';
+    return;
+  }
+  status.style.color='var(--text3)';
+  status.textContent='⏳ Recherche en cours...';
+  btn.disabled = true;
+  var url = 'https://recherche-entreprises.api.gouv.fr/search?q='+encodeURIComponent(siret)+'&page=1&per_page=1';
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      btn.disabled = false;
+      if(!data.results || data.results.length === 0){
+        status.style.color='#e57373';
+        status.textContent='❌ Entreprise non trouvée';
+        return;
+      }
+      var e = data.results[0];
+      var siege = e.siege || {};
+      // Nom
+      if(e.nom_complet && !document.getElementById('f-nom').value)
+        document.getElementById('f-nom').value = e.nom_complet;
+      // Adresse
+      var adr = [siege.numero_voie, siege.type_voie, siege.libelle_voie, siege.code_postal, siege.libelle_commune].filter(Boolean).join(' ');
+      if(adr) document.getElementById('f-adresse').value = adr;
+      // NAF → déclenche OPCO auto
+      if(siege.activite_principale){
+        var naf = siege.activite_principale.replace('.','').toUpperCase();
+        document.getElementById('f-naf').value = naf;
+        onNafOpcoInput();
+      }
+      // Salariés
+      if(siege.tranche_effectif_salarie)
+        document.getElementById('f-salaries').value = siege.tranche_effectif_salarie;
+      // IDCC
+      var idcc = '';
+      if(e.conventions_collectives && e.conventions_collectives.length > 0)
+        idcc = e.conventions_collectives[0].idcc || '';
+      if(idcc) document.getElementById('f-idcc').value = idcc;
+      status.style.color='#66bb6a';
+      status.textContent = '✅ ' + (e.nom_complet||'') + (idcc ? ' — IDCC '+idcc : '') + ' — Champs remplis !';
+    })
+    .catch(function(){
+      btn.disabled = false;
+      status.style.color='#e57373';
+      status.textContent='❌ Erreur réseau — vérifiez votre connexion';
+    });
 }
 
 function onNafOpcoInput(){
@@ -3782,6 +3819,286 @@ function runMigrations() {
 // ===================== INIT =====================
 runMigrations();
 renderList();
+
+function getContactCivility(d) {
+  var c = d.contacts && d.contacts[0];
+  if(c && c.nom) return c.nom;
+  return 'Madame, Monsieur';
+}
+
+function renderMailsTab(d, nom, email, prenom) {
+  var civility = getContactCivility(d);
+  var salutation = prenom ? 'Bonjour ' + prenom + ',' : 'Bonjour Madame, Monsieur,';
+  
+  var mails = [
+    {
+      id: 'presentation',
+      label: 'Présentation TerciForm',
+      color: '#7B2D8B',
+      emoji: '🏢',
+      subject: 'TerciForm — Présentation de nos formations',
+      body: salutation + '\n\nSuite à notre conversation téléphonique de ce jour, en pièce jointe, la liste des formations que nous proposons.\n\nNotre organisme est certifié Qualiopi. Toutes nos formations sont éligibles au financement OPCO.\nVous n\'avez aucune trésorerie à avancer, et nous nous occupons de monter l\'intégralité du dossier.\n\nN\'hésitez pas à revenir vers nous si vous avez des questions.\n\nToute l\'équipe de TerciForm vous souhaite une belle journée,'
+    },
+    {
+      id: 'devis',
+      label: 'Envoi de devis',
+      color: '#1976D2',
+      emoji: '📄',
+      subject: 'TerciForm — Devis relatif à votre besoin de formation',
+      body: salutation + '\n\nSuite à notre entretien téléphonique ce jour, vous trouverez le devis relatif à votre besoin.\n\nJe reste disponible aux coordonnées ci-dessous pour tout renseignement complémentaire.\n\nBien à vous,'
+    },
+    {
+      id: 'bondecommande',
+      label: 'Bon de commande',
+      color: '#2E7D32',
+      emoji: '✅',
+      subject: 'TerciForm — Bon de commande relatif à votre besoin de formation',
+      body: salutation + '\n\nSuite à notre entretien téléphonique ce jour, vous trouverez le bon de commande relatif à votre besoin.\n\nJe reste disponible aux coordonnées ci-dessous pour tout renseignement complémentaire.\n\nBien à vous,'
+    }
+  ];
+
+  var chips = mails.map(function(m) {
+    return '<div onclick="openMailTemplate(\''+m.id+'\',\''+encodeURIComponent(email)+'\',\''+encodeURIComponent(nom)+'\')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:24px;background:'+m.color+';color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin:6px;box-shadow:0 2px 10px rgba(0,0,0,0.3);transition:transform 0.15s" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">'
+      + m.emoji + ' ' + m.label
+      + '</div>';
+  }).join('');
+
+  return '<div style="padding:20px">'
+    + '<div style="font-size:12px;color:var(--text3);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Choisir un modèle d\'email</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px">' + chips + '</div>'
+    + (email ? '' : '<div style="font-size:11px;color:#ef9a9a;margin-top:8px">⚠️ Aucun email de contact renseigné pour cette fiche</div>')
+    + '</div>';
+}
+
+var _MAIL_TEMPLATES = {
+  presentation: {
+    subject: 'TerciForm — Présentation de nos formations',
+    body: function(s) { return s + '\n\nSuite à notre conversation téléphonique de ce jour, en pièce jointe, la liste des formations que nous proposons.\n\nNotre organisme est certifié Qualiopi. Toutes nos formations sont éligibles au financement OPCO.\nVous n\'avez aucune trésorerie à avancer, et nous nous occupons de monter l\'intégralité du dossier.\n\nN\'hésitez pas à revenir vers nous si vous avez des questions.\n\nToute l\'équipe de TerciForm vous souhaite une belle journée,'; }
+  },
+  devis: {
+    subject: 'TerciForm — Devis relatif à votre besoin de formation',
+    body: function(s) { return s + '\n\nSuite à notre entretien téléphonique ce jour, vous trouverez le devis relatif à votre besoin.\n\nJe reste disponible aux coordonnées ci-dessous pour tout renseignement complémentaire.\n\nBien à vous,'; }
+  },
+  bondecommande: {
+    subject: 'TerciForm — Bon de commande relatif à votre besoin de formation',
+    body: function(s) { return s + '\n\nSuite à notre entretien téléphonique ce jour, vous trouverez le bon de commande relatif à votre besoin.\n\nJe reste disponible aux coordonnées ci-dessous pour tout renseignement complémentaire.\n\nBien à vous,'; }
+  }
+};
+
+function openMailTemplate(templateId, emailEnc, nomEnc) {
+  var email = decodeURIComponent(emailEnc||'');
+  var nom   = decodeURIComponent(nomEnc||'');
+  
+  // Chercher le prénom du contact dans la fiche courante
+  var d = DB.find(function(x){ return x.id === window._currentPanelId; });
+  var c = d && d.contacts && d.contacts[0];
+  var prenom = c && c.nom ? c.nom : '';
+  var salutation = prenom ? 'Bonjour ' + prenom + ',' : 'Bonjour Madame, Monsieur,';
+  
+  var t = _MAIL_TEMPLATES[templateId];
+  if(!t) return;
+  
+  var subject = t.subject;
+  var body    = t.body(salutation);
+  
+  var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.open(gmailUrl, '_blank');
+  
+  // Logger l'action dans l'historique
+  if(d) {
+    d.actions = d.actions || [];
+    var labels = {presentation:'Email présentation envoyé', devis:'Email devis envoyé', bondecommande:'Email bon de commande envoyé'};
+    d.actions.push({date: now(), text: labels[templateId]||'Email envoyé'});
+    saveDB();
+  }
+}
+
+
+// ===================== OBJECTIFS =====================
+var OBJECTIFS_KEY = 'tercicall_objectifs';
+var _objEditMode = false;
+
+var OBJ_FIELDS = [
+  {key:'v',  label:'Fiches créées',    emoji:'📁'},
+  {key:'ap', label:'Appels passés',    emoji:'📞'},
+  {key:'q',  label:'Qualifications',   emoji:'⭐'},
+  {key:'em', label:'Emails envoyés',   emoji:'✉️'},
+  {key:'rv', label:'RDV effectués',    emoji:'🤝'},
+  {key:'dv', label:'Devis envoyés',    emoji:'📄'},
+  {key:'c1', label:'1ères prestations',emoji:'🏆'},
+];
+
+function loadObjectifs(){ try{ return JSON.parse(localStorage.getItem(OBJECTIFS_KEY))||[]; }catch(e){ return []; } }
+function saveObjectifs(obj){ localStorage.setItem(OBJECTIFS_KEY, JSON.stringify(obj)); }
+
+function fmtDate(d){ return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear(); }
+function isoToDisplay(s){ if(!s)return ''; var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function displayToIso(s){ if(!s)return ''; var p=s.split('/'); if(p.length<3)return s; return p[2]+'-'+p[1]+'-'+p[0]; }
+
+function getTotForPeriod(dateFrom, dateTo) {
+  var tot = {v:0,q:0,ng:0,c1:0,ho:0,ap:0,em:0,rv:0,dv:0,vi:0,rp:0,rr:0,rv2:0};
+  if(!dateFrom||!dateTo) return tot;
+  var d1 = new Date(dateFrom), d2 = new Date(dateTo);
+  var cur = new Date(d1);
+  while(cur <= d2){
+    var s = getStatsForDay(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    if(s){ for(var k in tot) tot[k]+=(s[k]||0); }
+    cur.setDate(cur.getDate()+1);
+  }
+  return tot;
+}
+
+function openObjectifs() {
+  _objEditMode = false;
+  document.getElementById('objectifs-modal-overlay').style.display = 'flex';
+  renderObjectifsContent();
+}
+
+function closeObjectifs() {
+  document.getElementById('objectifs-modal-overlay').style.display = 'none';
+}
+
+function renderObjectifsContent() {
+  var objs = loadObjectifs();
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  var activeObj = objs.length > 0 ? objs[objs.length-1] : null;
+  var container = document.getElementById('objectifs-content');
+  if(!container) return;
+
+  // MODE EDITION (admin crée ou modifie)
+  if(_objEditMode && isAdmin) {
+    var defFrom = activeObj ? activeObj.dateFrom : new Date().toISOString().slice(0,10);
+    var defTo   = activeObj ? activeObj.dateTo   : new Date(Date.now()+6*86400000).toISOString().slice(0,10);
+    var targets = activeObj ? activeObj.targets : {};
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
+    html += '<div><div style="font-size:11px;color:#888;margin-bottom:4px">📅 Date de début</div>';
+    html += '<input type="date" id="obj-date-from" value="'+defFrom+'" style="width:100%;background:#0f111a;border:1px solid #444;border-radius:8px;color:#e0e0e0;padding:8px 10px;font-size:13px"></div>';
+    html += '<div><div style="font-size:11px;color:#888;margin-bottom:4px">📅 Date de fin</div>';
+    html += '<input type="date" id="obj-date-to" value="'+defTo+'" style="width:100%;background:#0f111a;border:1px solid #444;border-radius:8px;color:#e0e0e0;padding:8px 10px;font-size:13px"></div>';
+    html += '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">';
+    OBJ_FIELDS.forEach(function(f){
+      var val = targets[f.key]||0;
+      html += '<div style="background:#1a1d2e;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">';
+      html += '<span style="font-size:13px;color:#e0e0e0">'+f.emoji+' '+f.label+'</span>';
+      html += '<input type="number" min="0" id="obj-field-'+f.key+'" value="'+val+'" style="width:70px;background:#0f111a;border:1px solid #f57c00;border-radius:6px;color:#f57c00;font-weight:700;font-size:14px;padding:4px 8px;text-align:center">';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div style="display:flex;gap:10px">';
+    html += '<button onclick="submitObjectifs()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#f57c00;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✅ Soumettre</button>';
+    html += '<button onclick="cancelObjEdit()" style="padding:10px 16px;border-radius:8px;border:1px solid #444;background:transparent;color:#888;font-size:13px;cursor:pointer">Annuler</button>';
+    html += '</div>';
+    container.innerHTML = html;
+    return;
+  }
+
+  // MODE LECTURE
+  if(!activeObj) {
+    var html2 = '<div style="text-align:center;padding:20px 0;color:#666;font-size:13px">Aucun objectif défini.</div>';
+    if(isAdmin) html2 += '<button onclick="startObjEdit()" style="width:100%;padding:10px;border-radius:8px;border:none;background:#f57c00;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">➕ Créer des objectifs</button>';
+    container.innerHTML = html2;
+    return;
+  }
+
+  var tot = getTotForPeriod(activeObj.dateFrom, activeObj.dateTo);
+  var targets = activeObj.targets||{};
+  var labelPeriode = isoToDisplay(activeObj.dateFrom)+' → '+isoToDisplay(activeObj.dateTo);
+
+  var html3 = '<div style="font-size:12px;color:#f57c00;font-weight:600;margin-bottom:14px;text-align:center">📅 '+labelPeriode+'</div>';
+  html3 += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">';
+  OBJ_FIELDS.forEach(function(f){
+    var t = targets[f.key]||0;
+    var a = tot[f.key]||0;
+    var p = t>0 ? Math.min(100, Math.round(a/t*100)) : 0;
+    var c = p>=100?'#43a047':p>=50?'#f57c00':'#e53935';
+    html3 += '<div style="background:#1a1d2e;border-radius:10px;padding:10px 14px">';
+    html3 += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    html3 += '<span style="font-size:13px;color:#e0e0e0">'+f.emoji+' '+f.label+'</span>';
+    html3 += '<div style="display:flex;align-items:center;gap:6px">';
+    html3 += '<span style="font-size:14px;font-weight:700;color:'+c+'">'+a+'</span>';
+    html3 += '<span style="font-size:11px;color:#555">/ '+t+'</span>';
+    if(p>=100) html3 += '<span>✅</span>';
+    html3 += '</div></div>';
+    if(t>0){
+      html3 += '<div style="height:6px;background:#0f111a;border-radius:3px;overflow:hidden">';
+      html3 += '<div style="height:100%;width:'+p+'%;background:'+c+';border-radius:3px;transition:width 0.4s"></div></div>';
+      html3 += '<div style="font-size:10px;color:#666;text-align:right;margin-top:3px">'+p+'%</div>';
+    }
+    html3 += '</div>';
+  });
+  html3 += '</div>';
+  if(isAdmin){
+    html3 += '<button onclick="startObjEdit()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #f57c00;background:transparent;color:#f57c00;font-size:13px;font-weight:600;cursor:pointer">✏️ Modifier les objectifs</button>';
+  }
+  container.innerHTML = html3;
+}
+
+function startObjEdit(){
+  _objEditMode = true;
+  renderObjectifsContent();
+}
+
+function cancelObjEdit(){
+  _objEditMode = false;
+  renderObjectifsContent();
+}
+
+function submitObjectifs(){
+  var dateFrom = document.getElementById('obj-date-from').value;
+  var dateTo   = document.getElementById('obj-date-to').value;
+  if(!dateFrom||!dateTo){ alert('Veuillez choisir les dates'); return; }
+  if(dateFrom > dateTo){ alert('La date de début doit être avant la date de fin'); return; }
+  var targets = {};
+  OBJ_FIELDS.forEach(function(f){
+    var el = document.getElementById('obj-field-'+f.key);
+    targets[f.key] = el ? (parseInt(el.value)||0) : 0;
+  });
+  var objs = loadObjectifs();
+  objs.push({id: Date.now(), dateFrom: dateFrom, dateTo: dateTo, targets: targets, createdBy: currentUser?currentUser.prenom:'', createdAt: new Date().toISOString()});
+  saveObjectifs(objs);
+  _objEditMode = false;
+  renderObjectifsContent();
+}
+
+function renderObjectifsBar(s) {
+  var objs = loadObjectifs();
+  if(!objs.length) return '';
+  var activeObj = objs[objs.length-1];
+  var targets = activeObj.targets||{};
+  var hasTargets = OBJ_FIELDS.some(function(f){ return targets[f.key]>0; });
+  if(!hasTargets) return '';
+  var tot = getTotForPeriod(activeObj.dateFrom, activeObj.dateTo);
+  var label = isoToDisplay(activeObj.dateFrom)+' → '+isoToDisplay(activeObj.dateTo);
+  var html = '<div style="border:1px solid rgba(245,124,0,0.3);border-radius:10px;padding:12px 14px;margin-top:12px;background:rgba(245,124,0,0.05)">';
+  html += '<div style="font-size:10px;color:#f57c00;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;font-weight:600;display:flex;justify-content:space-between"><span>🎯 Objectifs — '+label+'</span><button onclick="openObjectifs()" style="background:none;border:none;color:#f57c00;cursor:pointer;font-size:10px;text-decoration:underline">Voir</button></div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
+  OBJ_FIELDS.forEach(function(f){
+    var t = targets[f.key]; if(!t) return;
+    var a = tot[f.key]||0;
+    var p = Math.min(100,Math.round(a/t*100));
+    var c = p>=100?'#43a047':p>=50?'#f57c00':'#e53935';
+    html += '<div style="background:#1a1d2e;border-radius:8px;padding:8px 10px">';
+    html += '<div style="font-size:10px;color:#888;margin-bottom:4px">'+f.emoji+' '+f.label+'</div>';
+    html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:'+c+'">'+a+'</span><span style="font-size:11px;color:#555">/ '+t+'</span></div>';
+    html += '<div style="height:4px;background:#0f111a;border-radius:2px"><div style="height:100%;width:'+p+'%;background:'+c+';border-radius:2px"></div></div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
 </script>
+
+<!-- MODAL OBJECTIFS -->
+<div id="objectifs-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:#12151f;border:1px solid #2a2d3e;border-radius:16px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:#f57c00">🎯 Objectifs de la semaine</div>
+      <button onclick="closeObjectifs()" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="objectifs-content"></div>
+  </div>
+</div>
 </body>
 </html>
