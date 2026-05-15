@@ -3643,17 +3643,22 @@ function listenValeriePresence() {
       var textColor = isOnline ? '#a5d6a7' : '#e57373';
       var label = '';
       if(isOnline) {
-        label = 'Valérie connectée';
+        label = 'Valérie est en ligne';
       } else if(lastSeen) {
         var now2 = new Date();
         var hStr = lastSeen.getHours().toString().padStart(2,'0') + ':' + lastSeen.getMinutes().toString().padStart(2,'0');
-        var diffDays = Math.floor((now2 - lastSeen) / 86400000);
-        if(diffDays === 0) {
-          label = 'Valérie — aujourd\'hui à ' + hStr;
-        } else if(diffDays === 1) {
-          label = 'Valérie — hier à ' + hStr;
+        // Comparer les dates calendaires (pas les millisecondes)
+        var todayStr = now2.getFullYear()+'-'+(now2.getMonth()+1)+'-'+now2.getDate();
+        var lastStr  = lastSeen.getFullYear()+'-'+(lastSeen.getMonth()+1)+'-'+lastSeen.getDate();
+        var yesterday = new Date(now2); yesterday.setDate(now2.getDate()-1);
+        var yestStr  = yesterday.getFullYear()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getDate();
+        var dayStr = lastSeen.getDate()+'/'+(lastSeen.getMonth()+1)+'/'+lastSeen.getFullYear();
+        if(lastStr === todayStr) {
+          label = 'Dernière connexion : aujourd\'hui à ' + hStr;
+        } else if(lastStr === yestStr) {
+          label = 'Dernière connexion : hier à ' + hStr;
         } else {
-          label = 'Valérie — ' + lastSeen.getDate() + '/' + (lastSeen.getMonth()+1) + ' à ' + hStr;
+          label = 'Dernière connexion : le ' + dayStr + ' à ' + hStr;
         }
       } else {
         label = 'Valérie hors ligne';
@@ -3804,7 +3809,9 @@ function renderSpinScript(fiche) {
         inp = document.createElement('input');
         inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
         inp.placeholder='Sur quelle(s) formation(s) ?';
-        inp.oninput = function(){ if(this.value.length>1) update('oui', this.value); };
+        var _t1=null;
+        inp.oninput = function(){ var v=this.value; clearTimeout(_t1); if(v.length>=4){ _t1=setTimeout(function(){ update('oui',v); },600); } };
+        inp.onkeydown = function(e){ if(e.key==='Enter'&&this.value.length>1){ clearTimeout(_t1); update('oui',this.value); } };
         el.appendChild(inp); inp.focus();
       }},
       {label:'Non', action:function(){ update('non',''); }},
@@ -3814,7 +3821,9 @@ function renderSpinScript(fiche) {
         inp = document.createElement('input');
         inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
         inp.placeholder='À quelle date prévue ?';
-        inp.oninput = function(){ if(this.value.length>1) update('prevision', this.value); };
+        var _t2=null;
+        inp.oninput = function(){ var v=this.value; clearTimeout(_t2); if(v.length>=4){ _t2=setTimeout(function(){ update('prevision',v); },600); } };
+        inp.onkeydown = function(e){ if(e.key==='Enter'&&this.value.length>1){ clearTimeout(_t2); update('prevision',this.value); } };
         el.appendChild(inp); inp.focus();
       }}
     ];
@@ -3843,7 +3852,9 @@ function renderSpinScript(fiche) {
         inp=document.createElement('input');
         inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
         inp.placeholder='Ex : commercial, Excel, management, IA...';
-        inp.oninput=function(){ if(this.value.length>1) update('idee',this.value); };
+        var _t3=null;
+        inp.oninput=function(){ var v=this.value; clearTimeout(_t3); if(v.length>=4){ _t3=setTimeout(function(){ update('idee',v); },600); } };
+        inp.onkeydown=function(e){ if(e.key==='Enter'&&this.value.length>1){ clearTimeout(_t3); update('idee',this.value); } };
         el.appendChild(inp); inp.focus();
       }}
     ];
