@@ -1473,666 +1473,10 @@ function renderPanelTab(tab) {
   }
 
   if (tab === 'script') {
-    body.innerHTML = '<div class="panel-section"><div class="panel-section-title">Script interactif \u2014 ' + ((STATUTS[d.status] && STATUTS[d.status].label) ? STATUTS[d.status].label : 'Vierge') + '</div><div id="script-flow"></div></div>';
-
-    var C = { blue:'#1e4db7', purple:'#800080', green:'#2e7d32', orange:'#e65100', grey:'#37474f', red:'#c62828', teal:'#00695c' };
-
-    var NODES = {};
-
-    NODES['start'] = { type:'accroche',
-      text:'"Bonjour, [Pr\u00e9nom] de TerciForm. Je souhaite parler avec la personne qui s\'occupe des formations ou du d\u00e9veloppement commercial."',
-      sub:'Objectif : d\u00e9crocher 15 min. \u00c9coute plus que tu ne parles.',
-      buttons:[
-        {label:"C'est moi", color:C.blue, next:'pitch'},
-        {label:"Ce n'est pas moi", color:C.grey, next:'collect_contact'},
-        {label:"La personne n'est pas l\u00e0", color:C.grey, next:'collect_rappel'},
-        {label:"Pas le temps", color:C.orange, next:'pas_temps'},
-        {label:"Pas int\u00e9ress\u00e9", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['pitch'] = { type:'reponse',
-      text:'"Parfait. On est organisme de formation sp\u00e9cialis\u00e9 en performance commerciale, management et on permet aux soci\u00e9t\u00e9s la mont\u00e9e en comp\u00e9tence. Finançable OPCO, sans avance de tr\u00e9sorerie."',
-      sub:'Enca\u00eene imm\u00e9diatement sur la Question 1 \u2014 ne laisse pas de silence.',
-      buttons:[{label:"\u2192 Question 1", color:C.blue, next:'q1'}]};
-
-    NODES['q1'] = { type:'question',
-      text:'"Aujourd\'hui, vous avez vraiment un cadre pour faire progresser vos \u00e9quipes, ou chacun avance un peu comme il peut ?"',
-      sub:'Laisse le silence apr\u00e8s la question \u2014 ne relance pas trop vite.',
-      buttons:[
-        {label:"Oui c'est structur\u00e9 / bon cadre", color:C.green, next:'q1_structure'},
-        {label:"\u00c7a d\u00e9pend", color:C.orange, next:'q1_depend'},
-        {label:"Pas vraiment", color:C.purple, next:'q1_pas_vraiment'},
-        {label:"On a d\u00e9j\u00e0 des formations / pr\u00e9sta", color:C.teal, next:'q1_formations'},
-        {label:"Pas int\u00e9ress\u00e9", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['q1_structure'] = { type:'question',
-      text:'"Et vous arrivez \u00e0 maintenir ce niveau avec toute l\'\u00e9quipe dans la dur\u00e9e ?"',
-      sub:'Creuse \u2014 "structur\u00e9" peut vouloir dire beaucoup de choses.',
-      buttons:[
-        {label:"Oui", color:C.green, next:'q1_structure_oui'},
-        {label:"Non / Pas toujours", color:C.purple, next:'besoin_pilotage'}
-      ]};
-
-    NODES['q1_structure_oui'] = { type:'question',
-      text:'"Tr\u00e8s bien. Et vous avez un cadre r\u00e9gulier pour faire progresser l\'\u00e9quipe, ou \u00e7a repose surtout sur l\'exp\u00e9rience de chacun ?"',
-      sub:'Cherche l\'\u00e9cart entre les profils \u2014 c\'est souvent l\u00e0 que le besoin se cache.',
-      buttons:[
-        {label:"Cadre r\u00e9gulier", color:C.green, next:'objection_soft_ecarts'},
-        {label:"\u00c7a repose sur chacun", color:C.purple, next:'besoin_methode_homogene'}
-      ]};
-
-    NODES['objection_soft_ecarts'] = { type:'objection',
-      text:'"D\'accord. Et aujourd\'hui, il n\'y a vraiment aucun \u00e9cart entre les profils sur la vente ou le management ?"',
-      sub:'Silence strat\u00e9gique \u2014 laisse-le r\u00e9pondre. Souvent il conc\u00e8de un \u00e9cart ici.',
-      buttons:[
-        {label:"Il y a des \u00e9carts", color:C.purple, next:'besoin_ecarts'},
-        {label:"Non, aucun \u00e9cart", color:C.grey, next:'sortie_relance'}
-      ]};
-
-    NODES['q1_depend'] = { type:'question',
-      text:'"C\'est plut\u00f4t un sujet de vente ou de management chez vous ?"',
-      sub:'Recentre sur le sujet principal \u2014 ne pars pas dans les deux directions \u00e0 la fois.',
-      buttons:[
-        {label:"Vente", color:C.blue, next:'depend_vente'},
-        {label:"Management", color:C.purple, next:'depend_management'},
-        {label:"Les deux", color:C.orange, next:'besoin_global'}
-      ]};
-
-    NODES['depend_vente'] = { type:'question',
-      text:'"C\'est plut\u00f4t sur la m\u00e9thode commerciale, la posture conseil ou la r\u00e9gularit\u00e9 des r\u00e9sultats ?"',
-      sub:'Identifier le point de douleur pr\u00e9cis avant de parler solution.',
-      buttons:[
-        {label:"M\u00e9thode commerciale", color:C.blue, next:'rdv_vente'},
-        {label:"Posture conseil", color:C.blue, next:'rdv_vente'},
-        {label:"R\u00e9gularit\u00e9 des r\u00e9sultats", color:C.blue, next:'rdv_vente'}
-      ]};
-
-    NODES['depend_management'] = { type:'question',
-      text:'"C\'est plut\u00f4t sur le suivi, le cadrage ou la mont\u00e9e en comp\u00e9tence de l\'\u00e9quipe ?"',
-      sub:'Chaque r\u00e9ponse te donne un angle d\'attaque diff\u00e9rent pour le RDV.',
-      buttons:[
-        {label:"Suivi", color:C.purple, next:'rdv_management'},
-        {label:"Cadrage", color:C.purple, next:'rdv_management'},
-        {label:"Mont\u00e9e en comp\u00e9tence", color:C.purple, next:'rdv_management'}
-      ]};
-
-    NODES['q1_pas_vraiment'] = { type:'question',
-      text:'"Vous avez d\u00e9j\u00e0 essay\u00e9 de structurer \u00e7a ou pas encore ?"',
-      sub:'Comprendre si c\'est un sujet conscient ou non \u2014 \u00e7a change l\'angle de ton RDV.',
-      buttons:[
-        {label:"On a essay\u00e9", color:C.orange, next:'pas_vraiment_essaye'},
-        {label:"Pas encore", color:C.purple, next:'besoin_vierge'}
-      ]};
-
-    NODES['pas_vraiment_essaye'] = { type:'question',
-      text:'"D\'accord. Vous avez structur\u00e9 \u00e7a comment ?"',
-      sub:'\u00c9coute sans interrompre \u2014 il va te donner tous les arguments pour ton RDV.',
-      buttons:[
-        {label:"En interne", color:C.orange, next:'creuser_limites'},
-        {label:"Au cas par cas", color:C.orange, next:'creuser_limites'},
-        {label:"Avec une formation externe", color:C.teal, next:'creuser_efficacite'},
-        {label:"Sans vraie m\u00e9thode", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['creuser_limites'] = { type:'objection',
-      text:'"Et aujourd\'hui, \u00e7a fonctionne de fa\u00e7on homog\u00e8ne avec toute l\'\u00e9quipe, ou il reste encore des \u00e9carts ?"',
-      sub:'Question miroir \u2014 elle l\'am\u00e8ne \u00e0 constater lui-m\u00eame les limites.',
-      buttons:[
-        {label:"C'est homog\u00e8ne", color:C.green, next:'tester_homogeneite'},
-        {label:"Il reste des \u00e9carts", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['creuser_efficacite'] = { type:'objection',
-      text:'"Et cette formation a vraiment r\u00e9gl\u00e9 le sujet sur le terrain, ou il reste encore des points \u00e0 travailler ?"',
-      sub:'Cherche l\'insatisfaction r\u00e9siduelle \u2014 c\'est ton point d\'entr\u00e9e.',
-      buttons:[
-        {label:"\u00c7a a r\u00e9gl\u00e9 le sujet", color:C.green, next:'tester_homogeneite'},
-        {label:"Il reste des points", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['tester_homogeneite'] = { type:'objection',
-      text:'"D\'accord. Et vous arrivez \u00e0 maintenir ce niveau dans le temps avec tous les profils ?"',
-      sub:'Derni\u00e8re porte \u2014 si oui, sortie propre. Si non, tu tiens ton besoin.',
-      buttons:[
-        {label:"Oui, on maintient", color:C.green, next:'sortie_relance'},
-        {label:"C'est difficile \u00e0 maintenir", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['q1_formations'] = { type:'question',
-      text:'"Elles sont plut\u00f4t ax\u00e9es vente ou management aujourd\'hui ?"',
-      sub:'Identifier le gap \u2014 souvent ils ont l\'un mais pas l\'autre.',
-      buttons:[
-        {label:"Vente", color:C.blue, next:'formations_vente'},
-        {label:"Management", color:C.purple, next:'formations_management'},
-        {label:"Les deux", color:C.teal, next:'formations_les_deux'}
-      ]};
-
-    NODES['formations_vente'] = { type:'question',
-      text:'"D\'accord. Et sur le management, vous avez aussi quelque chose de structur\u00e9 pour faire progresser l\'\u00e9quipe ?"',
-      sub:'Ouvre le deuxi\u00e8me volet \u2014 c\'est souvent le manquant.',
-      buttons:[
-        {label:"Oui", color:C.green, next:'tester_efficacite'},
-        {label:"Non", color:C.purple, next:'besoin_management'}
-      ]};
-
-    NODES['formations_management'] = { type:'question',
-      text:'"D\'accord. Et sur la vente ou la posture conseil, vous avez aussi quelque chose de cadr\u00e9 ?"',
-      sub:'M\u00eame logique, angle invers\u00e9.',
-      buttons:[
-        {label:"Oui", color:C.green, next:'tester_efficacite'},
-        {label:"Non", color:C.purple, next:'besoin_vente'}
-      ]};
-
-    NODES['formations_les_deux'] = { type:'question',
-      text:'"Tr\u00e8s bien. Et aujourd\'hui, vous trouvez que \u00e7a suffit r\u00e9ellement sur le terrain ou il reste encore des \u00e9carts dans l\'\u00e9quipe ?"',
-      sub:'Question de r\u00e9alit\u00e9 terrain \u2014 distingue le d\u00e9claratif de la r\u00e9alit\u00e9.',
-      buttons:[
-        {label:"\u00c7a suffit", color:C.green, next:'tester_homogeneite'},
-        {label:"Il reste des \u00e9carts", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['tester_efficacite'] = { type:'objection',
-      text:'"Et aujourd\'hui, vous trouvez que \u00e7a suffit r\u00e9ellement sur le terrain avec tous les profils ?"',
-      sub:'Teste la satisfaction r\u00e9elle sans \u00eatre agressif.',
-      buttons:[
-        {label:"Oui, \u00e7a suffit", color:C.green, next:'tester_homogeneite'},
-        {label:"Pas enti\u00e8rement", color:C.purple, next:'besoin_ecarts'}
-      ]};
-
-    NODES['besoin_pilotage'] = { type:'besoin',
-      text:'"Je vois. Donc il y a d\u00e9j\u00e0 une base, mais pas encore un cadre pour faire progresser toute l\'\u00e9quipe de fa\u00e7on homog\u00e8ne. C\'est justement le type de sujet sur lequel on intervient."',
-      sub:'Reformule le besoin en miroir \u2014 il doit se reconna\u00eetre dans ce que tu dis.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_methode_homogene'] = { type:'besoin',
-      text:'"Je vois. Il y a donc une base, mais chacun avance encore un peu \u00e0 sa mani\u00e8re. C\'est justement ce qu\'on adresse : structurer la progression de toute l\'\u00e9quipe."',
-      sub:'Valide sans juger \u2014 il doit hocher la t\u00eate mentalement.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_ecarts'] = { type:'besoin',
-      text:'"Je vois. Il y a donc un vrai axe d\'am\u00e9lioration sur la structuration \u2014 et c\'est souvent l\u00e0 qu\'une approche externe apporte le plus, parce qu\'elle sort l\'\u00e9quipe de ses habitudes."',
-      sub:'L\u00e9gitime l\'intervention externe avant de proposer le RDV.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_global'] = { type:'besoin',
-      text:'"Je vois. Souvent quand la vente et le management se croisent, c\'est le signe qu\'il y a un vrai sujet de structuration globale \u2014 et c\'est pr\u00e9cis\u00e9ment ce qu\'on adresse."',
-      sub:'Les deux sujets en m\u00eame temps = budget potentiel plus important.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_vierge'] = { type:'besoin',
-      text:'"\u00c7a tombe bien \u2014 c\'est exactement notre domaine : structurer la progression des \u00e9quipes avec quelque chose de concret et op\u00e9rationnel, pas une formation th\u00e9orique."',
-      sub:'Diff\u00e9rencie-toi des formations "classiques" \u2014 terrain + m\u00e9thode + suivi.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_vente'] = { type:'besoin',
-      text:'"Je vois. Donc il y a d\u00e9j\u00e0 une base c\u00f4t\u00e9 management, mais pas encore de m\u00e9thode claire sur la vente et le conseil client pour homog\u00e9n\u00e9iser les r\u00e9sultats."',
-      sub:'Valorise ce qui existe, compl\u00e8te l\u00e0 o\u00f9 \u00e7a manque.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['besoin_management'] = { type:'besoin',
-      text:'"Je vois. Donc il y a d\u00e9j\u00e0 une base c\u00f4t\u00e9 vente, mais pas encore de cadre sur le pilotage et la mont\u00e9e en comp\u00e9tence de l\'\u00e9quipe dans la dur\u00e9e."',
-      sub:'M\u00eame logique \u2014 valorise + ouvre le gap.',
-      buttons:[{label:"\u2192 Proposer le RDV", color:C.blue, next:'rdv_final'}]};
-
-    NODES['rdv_vente'] = { type:'besoin',
-      text:'"Je vois. Le plus simple serait d\'\u00e9changer 15 minutes pour voir comment structurer la partie vente concr\u00e8tement avec votre \u00e9quipe."',
-      sub:'Pose la question du format imm\u00e9diatement apr\u00e8s. Ne laisse pas de silence.',
-      buttons:[
-        {label:"Oui pourquoi pas", color:C.green, next:'rdv_format'},
-        {label:"C\'est quoi exactement ?", color:C.orange, next:'rdv_cest_quoi'},
-        {label:"Envoyez une plaquette", color:C.orange, next:'rdv_plaquette'},
-        {label:"Pas le temps", color:C.grey, next:'rdv_pas_temps'},
-        {label:"Pas int\u00e9ress\u00e9", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['rdv_management'] = { type:'besoin',
-      text:'"Je vois. Le plus simple serait d\'\u00e9changer 15 minutes pour voir comment structurer le management de votre \u00e9quipe concr\u00e8tement."',
-      sub:'Idem. Enchaîne sur le format, ne laisse pas retomber la conversation.',
-      buttons:[
-        {label:"Oui pourquoi pas", color:C.green, next:'rdv_format'},
-        {label:"C\'est quoi exactement ?", color:C.orange, next:'rdv_cest_quoi'},
-        {label:"Envoyez une plaquette", color:C.orange, next:'rdv_plaquette'},
-        {label:"Pas le temps", color:C.grey, next:'rdv_pas_temps'},
-        {label:"Pas int\u00e9ress\u00e9", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['rdv_final'] = { type:'rdv',
-      text:'"Le plus simple serait d\'\u00e9changer 15 minutes \u2014 en visio ou chez vous directement \u2014 pour voir ce qui pourrait \u00eatre mis en place concr\u00e8tement avec votre \u00e9quipe."',
-      sub:'Alternative ferm\u00e9e = taux de RDV x2.',
-      buttons:[
-        {label:"Oui pourquoi pas", color:C.green, next:'rdv_format'},
-        {label:"C\'est quoi exactement ?", color:C.orange, next:'rdv_cest_quoi'},
-        {label:"Envoyez une plaquette", color:C.orange, next:'rdv_plaquette'},
-        {label:"Pas le temps", color:C.grey, next:'rdv_pas_temps'},
-        {label:"Pas int\u00e9ress\u00e9", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['rdv_format'] = { type:'rdv',
-      text:'"Parfait. On fait \u00e7a en visio ou vous pr\u00e9f\u00e9rez qu\'on passe vous voir directement ? Vous \u00eates plut\u00f4t disponible d\u00e9but ou fin de semaine ?"',
-      sub:'Visio = plus facile \u00e0 obtenir. Pr\u00e9sentiel = meilleur taux de signature. Si tu es \u00e0 moins de 30 min, propose le pr\u00e9sentiel.',
-      buttons:[
-        {label:"Visio", color:C.blue, next:'rdv_creneau'},
-        {label:"Pr\u00e9sentiel", color:C.green, next:'rdv_creneau'},
-        {label:"Peu importe", color:C.blue, next:'rdv_creneau'}
-      ]};
-
-    NODES['rdv_cest_quoi'] = { type:'objection',
-      text:'"15 minutes, sans engagement. On regarde ensemble si ce qu\'on fait correspond \u00e0 votre situation. Si ce n\'est pas le cas, on s\'arr\u00eate l\u00e0."',
-      sub:'Rassure sur l\'absence d\'engagement. L\'objectif est de voir si \u00e7a correspond, pas de vendre.',
-      buttons:[
-        {label:"OK \u00e7a me convient", color:C.green, next:'rdv_format'},
-        {label:"J\'h\u00e9site encore", color:C.orange, next:'rdv_plaquette'},
-        {label:"Non merci", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['rdv_plaquette'] = { type:'objection',
-      text:'"Je peux vous envoyer quelque chose, mais honnêtement \u00e7a ne remplace pas 15 min d\'\u00e9change \u2014 ce qui compte c\'est votre situation \u00e0 vous. Je vous propose mardi ou jeudi, \u00e7a vous convient ?"',
-      sub:'La plaquette est une esquive, pas un non. Reformulez imm\u00e9diatement sur une date. Ne coupez pas l\'\u00e9lan.',
-      buttons:[
-        {label:"OK pour un \u00e9change", color:C.green, next:'rdv_format'},
-        {label:"Envoyez quand m\u00eame", color:C.orange, next:'rdv_envoi_mail'},
-        {label:"Non d\u00e9finitivement", color:C.red, next:'objection_interesse'}
-      ]};
-
-    NODES['rdv_pas_temps'] = { type:'objection',
-      text:'"Ce ne sont que 15 minutes. Si \u00e7a ne correspond pas \u00e0 votre situation, on s\'arr\u00eate l\u00e0. D\u00e9but ou fin de semaine ?"',
-      sub:'R\u00e9duire la perception du co\u00fbt. 15 min c\'est rien \u2014 et l\'alternative ferm\u00e9e force une d\u00e9cision.',
-      buttons:[
-        {label:"D\u00e9but de semaine", color:C.green, next:'rdv_creneau'},
-        {label:"Fin de semaine", color:C.green, next:'rdv_creneau'},
-        {label:"Vraiment pas le temps", color:C.grey, next:'collect_rappel'}
-      ]};
-
-    NODES['rdv_envoi_mail'] = { type:'collect',
-      text:'"Pas de souci. Je vous envoie nos r\u00e9f\u00e9rences et je vous rappelle dans 3 jours pour voir si \u00e7a a r\u00e9pondu \u00e0 vos questions."',
-      sub:'Utilisez le bouton email ci-dessous. Et planifiez le rappel J+3 dans le calendrier.',
-      collect:[{label:'Email pour l\'envoi', placeholder:'prenom@societe.fr', key:'email'}],
-      saveContact:true,
-      buttons:[{label:'Suite', color:C.blue, next:'fin_rappel'}]};
-
-        NODES['rdv_creneau'] = { type:'collect',
-      text:'"Parfait. On fait \u00e7a en visio ou vous pr\u00e9f\u00e9rez qu\'on passe vous voir directement ?"',
-      sub:'Visio = plus facile \u00e0 obtenir. Pr\u00e9sentiel = meilleur taux de signature. Adapte selon la distance.',
-      collect:[
-        {label:'Visio ou pr\u00e9sentiel', placeholder:'Visio / Pr\u00e9sentiel', key:'rdv_type'},
-        {label:'Email de confirmation', placeholder:'prenom@societe.fr', key:'rdv_email'}
-      ],
-      saveAction:true,
-      buttons:[{label:'\u2705 Enregistrer le RDV', color:C.green, next:'fin_rdv'}]};
-
-    NODES['rdv_objection_temps'] = { type:'objection',
-      text:'"Je comprends. Ce ne sera que 15 minutes \u2014 et si \u00e7a ne correspond pas \u00e0 votre situation, on s\'arr\u00eate l\u00e0. Ca ne vous engage \u00e0 rien."',
-      sub:'L\u00e8ve la peur de l\'engagement \u2014 15 min sans pression = oui plus facile.',
-      buttons:[
-        {label:"\u2192 Il accepte", color:C.green, next:'rdv_creneau'},
-        {label:"\u2192 Toujours pas", color:C.red, next:'collect_rappel'}
-      ]};
-
-    NODES['objection_interesse'] = { type:'objection',
-      text:'"Je comprends tout \u00e0 fait. Juste une question avant de vous laisser : si vous deviez identifier un seul point \u00e0 am\u00e9liorer dans votre \u00e9quipe commerciale ou manag\u00e9riale, ce serait lequel ?"eviez identifier un seul point \u00e0 am\u00e9liorer dans votre \u00e9quipe commerciale ou manag\u00e9riale, ce serait lequel ?"',
-      sub:'Technique du "juste avant de raccrocher" \u2014 d\u00e9samorce le non r\u00e9flexe et ouvre le dialogue.',
-      buttons:[
-        {label:"Il r\u00e9pond (besoin identifi\u00e9)", color:C.purple, next:'besoin_ecarts'},
-        {label:"Il confirme le non", color:C.grey, next:'sortie_relance'}
-      ]};
-
-    NODES['collect_contact'] = { type:'collect',
-      text:'"D\'accord. Qui s\'en occupe chez vous ?"',
-      sub:'R\u00e9cup\u00e8re au minimum le nom + email ou ligne directe avant de raccrocher.',
-      collect:[
-        {label:'Nom du d\u00e9cisionnaire', placeholder:'Pr\u00e9nom Nom', key:'nom'},
-        {label:'Poste', placeholder:'DRH, Directeur commercial...', key:'poste'},
-        {label:'Email direct', placeholder:'prenom@societe.fr', key:'email'},
-        {label:'Ligne directe', placeholder:'06 12 34 56 78', key:'tel'}
-      ],
-      saveContact:true,
-      buttons:[{label:'\u2705 Enregistrer le contact', color:C.blue, next:'fin_contact'}]};
-
-    NODES['collect_rappel'] = { type:'collect',
-      text:'"Tr\u00e8s bien. Je la rappelle plut\u00f4t en d\u00e9but ou en fin de journ\u00e9e ?"',
-      sub:'Pose une alternative \u2014 ne demande pas "quand est-ce que je peux rappeler ?".',
-      collect:[
-        {label:'Nom de la personne', placeholder:'Pr\u00e9nom Nom', key:'nom'},
-        {label:'Email si possible', placeholder:'prenom@societe.fr', key:'email'}
-      ],
-      saveContact:true,
-      buttons:[{label:'\u2705 Enregistrer', color:C.blue, next:'fin_rappel'}]};
-
-    NODES['pas_temps'] = { type:'collect',
-      text:'"Compris. Je ne veux pas vous d\u00e9ranger. Je vous rappelle plut\u00f4t en d\u00e9but ou en fin de semaine ?"',
-      sub:'Alternative ferm\u00e9e m\u00eame pour le rappel \u2014 \u00e9vite le "rappelez-moi plus tard" vague.',
-      buttons:[{label:'\u21ba Planifier (voir ci-dessous)', color:C.blue, next:'fin_rappel'}]};
-
-    NODES['sortie_relance'] = { type:'cloture', emoji:'📅',
-      text:'"Tr\u00e8s bien. Je note. Je reviendrai vers vous si le sujet \u00e9volue \u2014 et si vous avez un projet formation d\'ici l\u00e0, n\'h\u00e9sitez pas."',
-      note:'Sortie propre \u2014 relance dans 3 mois. Ajoute une note dans l\'historique.',
-      buttons:[{label:'\u21ba Recommencer', color:C.blue, next:'start'}]};
-
-    NODES['fin_rdv'] = { type:'cloture', emoji:'\uD83C\uDFAF',
-      text:'RDV obtenu \u2714 Confirme par email dans les 2h : date, format et lien visio si besoin. La fiche reste Qualifi\u00e9 \u2014 passe en N\u00e9goci\u00e9 uniquement \u00e0 l\'envoi du devis.',
-      note:'RDV = Qualifi\u00e9. La fiche passe en N\u00e9goci\u00e9 uniquement quand un devis ou une proposition est envoy\u00e9(e).',
-      buttons:[{label:'\u21ba Nouvel appel', color:C.blue, next:'start'}]};
-
-    NODES['fin_contact'] = { type:'cloture', emoji:'\u2705',
-      text:'Contact enregistr\u00e9. Rappelle ce contact dans 24-48h \u2014 la chaleur de l\'\u00e9change aide.',
-      note:'Fiche pass\u00e9e en Qualifi\u00e9 automatiquement.',
-      buttons:[{label:'\u21ba Nouvel appel', color:C.blue, next:'start'}]};
-
-    NODES['fin_rappel'] = { type:'cloture', emoji:'📅',
-      text:'Rappel enregistr\u00e9 dans l\'historique. Mets une alerte dans ton agenda pour ne pas oublier.',
-      note:'Rappeler au cr\u00e9neau convenu \u2014 ponctualit\u00e9 = cr\u00e9dibilit\u00e9.',
-      buttons:[{label:'\u21ba Nouvel appel', color:C.blue, next:'start'}]};
-
-    var TYPE_STYLE = {
-      accroche: {bg:'rgba(30,77,183,0.12)', border:'rgba(30,77,183,0.4)',  label:'ACCROCHE',  lc:'#4fc3f7'},
-      pitch:    {bg:'rgba(30,77,183,0.1)',  border:'rgba(30,77,183,0.3)',  label:'PITCH',     lc:'#4fc3f7'},
-      question: {bg:'rgba(79,195,247,0.07)',border:'rgba(79,195,247,0.3)', label:'QUESTION',  lc:'#4fc3f7'},
-      reponse:  {bg:'rgba(79,195,247,0.07)',border:'rgba(79,195,247,0.3)', label:'REPONSE',   lc:'#4fc3f7'},
-      objection:{bg:'rgba(230,81,0,0.1)',   border:'rgba(230,81,0,0.35)',  label:'OBJECTION', lc:'#ffb74d'},
-      besoin:   {bg:'rgba(128,0,128,0.1)',  border:'rgba(128,0,128,0.4)',  label:'BESOIN',    lc:'#ce93d8'},
-      rdv:      {bg:'rgba(46,125,50,0.12)', border:'rgba(46,125,50,0.4)',  label:'RDV',       lc:'#a5d6a7'},
-      collect:  {bg:'rgba(0,105,92,0.1)',   border:'rgba(0,105,92,0.35)',  label:'COLLECTER', lc:'#80cbc4'},
-      cloture:  {bg:'rgba(46,125,50,0.1)',  border:'rgba(46,125,50,0.3)',  label:'FIN',       lc:'#a5d6a7'}
-    };
-
-    var scriptHistory = ['start'];
-
-    renderStep = function(stepKey) {
-      var step = NODES[stepKey];
-      if (!step) return;
-      var el = document.getElementById('script-flow');
-      if (!el) return;
-      el.innerHTML = '';
-
-      var st = TYPE_STYLE[step.type] || TYPE_STYLE['question'];
-
-      if (scriptHistory.length > 1) {
-        var crumb = document.createElement('div');
-        crumb.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;align-items:center;';
-        scriptHistory.forEach(function(k, i) {
-          var sp = document.createElement('span');
-          sp.style.cssText = 'font-size:10px;color:' + (i===scriptHistory.length-1?'var(--accent)':'var(--text3)') + ';';
-          sp.textContent = NODES[k] ? (TYPE_STYLE[NODES[k].type]||{label:k}).label : k;
-          crumb.appendChild(sp);
-          if (i < scriptHistory.length-1) {
-            var arr = document.createElement('span');
-            arr.style.cssText = 'color:var(--text3);font-size:10px;';
-            arr.textContent = ' \u203a ';
-            crumb.appendChild(arr);
-          }
-        });
-        el.appendChild(crumb);
-      }
-
-      var badge = document.createElement('div');
-      badge.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.5px;color:'+st.lc+';margin-bottom:8px;';
-      badge.textContent = st.label;
-      el.appendChild(badge);
-
-      var box = document.createElement('div');
-      box.style.cssText = 'background:'+st.bg+';border:1px solid '+st.border+';border-radius:12px;padding:16px 18px;margin-bottom:12px;line-height:1.8;font-size:13.5px;color:var(--text);';
-      box.innerHTML = step.text;
-      el.appendChild(box);
-
-      if (step.sub) {
-        var tip = document.createElement('div');
-        tip.style.cssText = 'font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--border2);border-radius:4px;';
-        tip.textContent = '\uD83D\uDCA1 ' + step.sub;
-        el.appendChild(tip);
-      }
-
-      if (step.collect && step.collect.length > 0) {
-        var cbox = document.createElement('div');
-        cbox.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;';
-        var ct = document.createElement('div');
-        ct.style.cssText = 'font-size:10px;color:var(--accent);font-weight:700;margin-bottom:10px;letter-spacing:1px;';
-        ct.textContent = 'A NOTER';
-        cbox.appendChild(ct);
-        step.collect.forEach(function(f) {
-          var row = document.createElement('div');
-          row.style.marginBottom = '8px';
-          var lbl = document.createElement('label');
-          lbl.style.cssText = 'font-size:11px;color:var(--text2);display:block;margin-bottom:3px;';
-          lbl.textContent = f.label;
-          var inp = document.createElement('input');
-          inp.id = 'sc-'+f.key;
-          inp.className = 'form-input';
-          inp.placeholder = f.placeholder;
-          inp.style.cssText = 'width:100%;font-size:12px;';
-          row.appendChild(lbl); row.appendChild(inp);
-          cbox.appendChild(row);
-        });
-        el.appendChild(cbox);
-      }
-
-      if (step.type === 'cloture' && step.emoji) {
-        var eb = document.createElement('div');
-        eb.style.cssText = 'text-align:center;padding:14px;background:rgba(79,195,247,0.05);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;';
-        eb.innerHTML = '<div style="font-size:30px;margin-bottom:6px">'+step.emoji+'</div><div style="font-size:12px;color:var(--text2);">'+step.note+'</div>';
-        el.appendChild(eb);
-      }
-
-      // ── BLOC DE FIN : contact rapide + planification (sur toutes les issues finales) ──
-      var isEndStep = (step.type !== 'accroche' && step.type !== 'pitch' && step.type !== 'question');
-      if (isEndStep) {
-        var endBlock = document.createElement('div');
-        endBlock.style.cssText = 'background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:12px;';
-
-        // ── SECTION CONTACT RAPIDE ──────────────────────────────
-        var fiche = DB.find(function(x){ return x.id===d.id; });
-        var hasContact = fiche && fiche.contacts && fiche.contacts.length > 0;
-        var contactEmail = '';
-        if (fiche) {
-          if (fiche.email) contactEmail = fiche.email;
-          else if (fiche.contacts) { var ce=fiche.contacts.find(function(c){return c.email;}); if(ce) contactEmail=ce.email; }
-        }
-
-        var contTitle = document.createElement('div');
-        contTitle.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:10px;';
-        contTitle.textContent = hasContact ? 'Contact enregistre' : 'Enregistrer le contact';
-        endBlock.appendChild(contTitle);
-
-        if (!hasContact) {
-          var contRow = document.createElement('div');
-          contRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;';
-          [
-            {id:'ep-nom',   label:'Nom',           placeholder:'Prenom Nom',       type:'text'},
-            {id:'ep-poste', label:'Poste',          placeholder:'DRH, Directeur...',type:'text'},
-            {id:'ep-tel',   label:'Tel direct',     placeholder:'06 12 34 56 78',   type:'tel'},
-            {id:'ep-email', label:'Email direct',   placeholder:'prenom@soc.fr',    type:'email'}
-          ].forEach(function(f) {
-            var w = document.createElement('div'); w.style.cssText='flex:1;min-width:130px;';
-            var lb = document.createElement('label'); lb.style.cssText='font-size:11px;color:var(--text2);display:block;margin-bottom:3px;'; lb.textContent=f.label;
-            var inp = document.createElement('input'); inp.id=f.id; inp.type=f.type; inp.className='form-input'; inp.placeholder=f.placeholder; inp.style.fontSize='12px;';
-            w.appendChild(lb); w.appendChild(inp); contRow.appendChild(w);
-          });
-          var saveContBtn = document.createElement('button');
-          saveContBtn.className='btn btn-ghost btn-sm'; saveContBtn.style.alignSelf='flex-end';
-          saveContBtn.textContent='+ Enregistrer contact';
-          saveContBtn.addEventListener('click', function() {
-            if (!fiche) return;
-            var nom=document.getElementById('ep-nom').value.trim();
-            var poste=document.getElementById('ep-poste').value.trim();
-            var tel=document.getElementById('ep-tel').value.trim();
-            var email=document.getElementById('ep-email').value.trim();
-            if (!nom && !tel && !email) { alert('Renseigner au moins un champ.'); return; }
-            fiche.contacts=fiche.contacts||[];
-            fiche.contacts.push({nom:nom,poste:poste,tel:tel,email:email,date:now()});
-            if (fiche.status==='vierge' && (tel||email)) {
-              fiche.status='qualifie';
-              fiche.actions=fiche.actions||[];
-              fiche.actions.push({date:now(),text:'Statut -> Qualifie (contact script)'});
-            }
-            if (email) contactEmail=email;
-            saveDB();
-            saveContBtn.textContent='Enregistre !'; saveContBtn.style.color='#43a047';
-            contTitle.textContent='Contact enregistre';
-            setTimeout(function(){saveContBtn.textContent='+ Enregistrer contact';saveContBtn.style.color='';},2000);
-          });
-          contRow.appendChild(saveContBtn);
-          endBlock.appendChild(contRow);
-        } else {
-          var c0=fiche.contacts[0];
-          var contInfo=document.createElement('div');
-          contInfo.style.cssText='font-size:12px;color:var(--text2);margin-bottom:12px;';
-          contInfo.textContent=(c0.nom||'')+(c0.poste?' - '+c0.poste:'')+(c0.tel?' | '+c0.tel:'')+(c0.email?' | '+c0.email:'');
-          endBlock.appendChild(contInfo);
-        }
-
-        // ── SEPARATEUR ──────────────────────────────────────────
-        var sep = document.createElement('hr');
-        sep.style.cssText='border:none;border-top:1px solid var(--border);margin:12px 0;';
-        endBlock.appendChild(sep);
-
-        // ── PLANIFICATION OBLIGATOIRE ───────────────────────────
-        var planTitle = document.createElement('div');
-        planTitle.style.cssText='font-size:10px;font-weight:700;letter-spacing:1px;color:#ff9800;text-transform:uppercase;margin-bottom:10px;';
-        planTitle.textContent='Planifier la suite *';
-        endBlock.appendChild(planTitle);
-
-        // Boutons date rapide
-        var quickRow = document.createElement('div');
-        quickRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
-        var today = new Date();
-        [{label:'Demain',days:1},{label:'J+3',days:3},{label:'J+7',days:7},{label:'J+14',days:14},{label:'J+1 mois',days:30}].forEach(function(q) {
-          var qd=new Date(today); qd.setDate(qd.getDate()+q.days);
-          var qdStr=qd.toISOString().slice(0,10);
-          var qb=document.createElement('button');
-          qb.style.cssText='padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);cursor:pointer;font-size:11px;transition:all .15s;';
-          qb.textContent=q.label;
-          qb.addEventListener('mouseover',function(){qb.style.background='var(--blue)';qb.style.color='white';});
-          qb.addEventListener('mouseout',function(){qb.style.background='var(--bg4)';qb.style.color='var(--text2)';});
-          qb.addEventListener('click',function(){
-            document.getElementById('script-dp-date').value=qdStr;
-            // Highlight selected
-            quickRow.querySelectorAll('button').forEach(function(b){b.style.background='var(--bg4)';b.style.color='var(--text2)';b.style.border='1px solid var(--border2)';});
-            qb.style.background='var(--blue)'; qb.style.color='white'; qb.style.border='1px solid var(--blue)';
-          });
-          quickRow.appendChild(qb);
-        });
-        endBlock.appendChild(quickRow);
-
-        // Type + Date + Note + Enregistrer
-        var planRow = document.createElement('div');
-        planRow.style.cssText='display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;';
-
-        var dpTypeSel = document.createElement('select');
-        dpTypeSel.id='script-dp-type'; dpTypeSel.className='form-input'; dpTypeSel.style.cssText='flex:1;min-width:130px;font-size:12px;';
-        ['Rappel tel','RDV visio','RDV presentiel','Email de suivi','Envoi devis','Relance'].forEach(function(opt){
-          var o=document.createElement('option'); o.value=opt; o.textContent=opt; dpTypeSel.appendChild(o);
-        });
-        planRow.appendChild(dpTypeSel);
-
-        var dpDateInp = document.createElement('input');
-        dpDateInp.type='date'; dpDateInp.id='script-dp-date'; dpDateInp.className='form-input';
-        dpDateInp.style.cssText='flex:1;min-width:130px;font-size:12px;';
-        planRow.appendChild(dpDateInp);
-
-        var dpNoteInp = document.createElement('input');
-        dpNoteInp.type='text'; dpNoteInp.id='script-dp-note'; dpNoteInp.className='form-input';
-        dpNoteInp.placeholder='Note...'; dpNoteInp.style.cssText='flex:2;min-width:150px;font-size:12px;';
-        planRow.appendChild(dpNoteInp);
-
-        var dpSaveBtn = document.createElement('button');
-        dpSaveBtn.className='btn btn-primary btn-sm'; dpSaveBtn.textContent='Planifier';
-        dpSaveBtn.addEventListener('click', function() {
-          var dateVal=document.getElementById('script-dp-date').value;
-          var typeVal=document.getElementById('script-dp-type').value;
-          var noteVal=document.getElementById('script-dp-note').value.trim();
-          if (!dateVal) { planTitle.style.color='#ef5350'; alert('Date obligatoire.'); return; }
-          var f=DB.find(function(x){return x.id===d.id;});
-          if (!f) return;
-          f.rappel={date:dateVal, note:typeVal+(noteVal?' - '+noteVal:'')};
-          f.actions=f.actions||[];
-          f.actions.push({date:now(),text:typeVal+' le '+dateVal+(noteVal?' - '+noteVal:'')});
-          saveDB();
-          dpSaveBtn.textContent='Planifie !'; dpSaveBtn.style.background='#2e7d32';
-          planTitle.textContent='Planifie le '+dateVal; planTitle.style.color='#43a047';
-          setTimeout(function(){dpSaveBtn.textContent='Planifier';dpSaveBtn.style.background='';},2000);
-        });
-        planRow.appendChild(dpSaveBtn);
-        endBlock.appendChild(planRow);
-
-        // Mailto si email dispo
-        if (contactEmail) {
-          var mailA=document.createElement('a');
-          mailA.style.cssText='display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:8px;border:1px solid var(--border2);color:var(--accent);font-size:11px;text-decoration:none;cursor:pointer;';
-          var subj='TerciForm - Suite de notre echange';
-          var bod='Bonjour,\n\nSuite a notre echange, voici les informations demandees.\n\nBien cordialement,\nJonathan Ghizzo - TerciForm';
-          mailA.href='mailto:'+contactEmail+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(bod);
-          mailA.textContent='Preparer un email a '+contactEmail;
-          endBlock.appendChild(mailA);
-        }
-
-        el.appendChild(endBlock);
-      }
-
-            var btnRow = document.createElement('div');
-      btnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;';
-
-      if (scriptHistory.length > 1) {
-        var backBtn = document.createElement('button');
-        backBtn.style.cssText = 'padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;';
-        backBtn.textContent = '\u2190 Retour';
-        backBtn.addEventListener('click', function() { scriptBack(); });
-        btnRow.appendChild(backBtn);
-      }
-
-      step.buttons.forEach(function(btn) {
-        var b = document.createElement('button');
-        b.style.cssText = 'padding:9px 14px;border-radius:8px;border:none;background:'+btn.color+';color:white;cursor:pointer;font-size:12px;font-weight:500;flex:1;min-width:130px;text-align:left;';
-        b.textContent = btn.label;
-        var nk = btn.next; var fk = stepKey;
-        b.addEventListener('click', function() { scriptGo(nk, fk); });
-        btnRow.appendChild(b);
-      });
-
-      el.appendChild(btnRow);
-    }
-
-    window.scriptGo = function(nextKey, fromKey) {
-      var cs = NODES[fromKey];
-      if (cs && cs.collect) {
-        var fiche = DB.find(function(x){ return x.id===d.id; });
-        if (fiche) {
-          var data = {};
-          cs.collect.forEach(function(f){ var i=document.getElementById('sc-'+f.key); if(i) data[f.key]=i.value.trim(); });
-          if (cs.saveContact && (data.nom||data.email||data.tel)) {
-            fiche.contacts = fiche.contacts||[];
-            fiche.contacts.push({nom:data.nom||'',poste:data.poste||'',tel:data.tel||'',email:data.email||'',date:now()});
-            if (fiche.status==='vierge' && (data.tel||data.email)) {
-              fiche.status='qualifie'; fiche.actions=fiche.actions||[];
-              fiche.actions.push({date:now(),text:'Statut auto \u2192 Qualifi\u00e9 (contact script)'});
-            }
-          }
-          if (cs.saveAction) {
-            var parts=[];
-            if(data.creneau) parts.push('Rappel : '+data.creneau);
-            if(data.nom) parts.push('Contact : '+data.nom);
-            if(data.email) parts.push('Email : '+data.email);
-            if(data.rdv_date) parts.push('RDV : '+data.rdv_date);
-            if(data.rdv_type) parts.push('Format : '+data.rdv_type);
-            if(data.rdv_email) parts.push('Email conf : '+data.rdv_email);
-            if(parts.length){ fiche.actions=fiche.actions||[]; fiche.actions.push({date:now(),text:'\uD83D\uDCC5 '+parts.join(' | ')}); }
-          }
-          var dn = NODES[nextKey];
-          if (dn && dn.autoStatus) {
-            fiche.status=dn.autoStatus; fiche.actions=fiche.actions||[];
-            fiche.actions.push({date:now(),text:'Statut auto \u2192 '+(STATUTS[dn.autoStatus]?STATUTS[dn.autoStatus].label:dn.autoStatus)+' (RDV obtenu)'});
-          }
-          saveDB();
-        }
-      }
-      if (nextKey==='start') scriptHistory=['start']; else scriptHistory.push(nextKey);
-      renderStep(nextKey);
-    };
-
-    window.scriptBack = function() {
-      if (scriptHistory.length>1){ scriptHistory.pop(); renderStep(scriptHistory[scriptHistory.length-1]); }
-    };
-
-    renderStep('start');
+    var ficheId = d.id;
+    body.innerHTML = '<div class="panel-section"><div class="panel-section-title">Script d\'appel \u2014 ' + d.nom + '</div><div id="spin-script"></div></div>';
+    renderSpinScript(d);
+    return;
   }
 }
 function getTips(d) {
@@ -4326,6 +3670,293 @@ function doLogoutWithPresence() {
     }
   } catch(e) {}
   doLogout();
+}
+
+// ===================== SCRIPT SPIN =====================
+function renderSpinScript(fiche) {
+  var el = document.getElementById('spin-script');
+  if(!el) return;
+
+  var state = { step: 0, q1: null, q1v: '', q2: null, q2v: '', q3: null, done: false };
+
+  var PH = {
+    q1: {
+      oui: function(v){ return v ? 'Très bien — et sur ' + v + ', vous avez utilisé votre OPCO pour financer ?' : 'C\'est bien. Vous avez l\'habitude de former. Vous avez utilisé votre OPCO ?'; },
+      non: 'OK. Vous avez probablement des droits OPCO qui dorment depuis janvier. Ça expire en décembre — c\'est de l\'argent qui vous appartient.',
+      prevision: function(v){ return v ? 'Parfait — ' + v + ' c\'est le bon moment pour préparer maintenant. Le dossier OPCO prend quelques semaines.' : 'Parfait. Si on s\'y met maintenant vous êtes prêt à temps — sans sortir un centime de trésorerie.'; }
+    },
+    q2: {
+      aucune: 'Pas de problème — c\'est notre rôle. On identifie avec vous ce qui a le plus d\'impact pour vos équipes.',
+      idee: function(v){
+        var fl=(v||'').toLowerCase();
+        var m={'commercial':'La vente et la négociation — c\'est notre cœur de métier. Des techniques concrètes dès la première semaine. Finançable OPCO à 100%.','excel':'Excel et la bureautique — on travaille avec vos outils. Résultats dès le lendemain. Finançable OPCO à 100%.','management':'Le management — moins de turnover, plus de motivation. Des parcours concrets, pas théoriques.','ia':'L\'IA et le digital — notre formation la plus demandée. Vos équipes gagnent du temps dès le lendemain. Finançable OPCO à 100%.','anglais':'L\'anglais professionnel — oral, écrit, réunions, négociation. Adapté à chaque collaborateur.','digital':'Le digital — maîtriser les outils qui font gagner du temps. 100% finançable OPCO.','informatique':'L\'informatique et la bureautique — on remet tout le monde à niveau rapidement.'};
+        for(var k in m){ if(fl.indexOf(k)>=0) return 'Parfait — on forme justement sur ça. ' + m[k]; }
+        return 'Parfait — on forme sur ' + v + '. Programme sur mesure adapté à votre secteur. Finançable OPCO à 100%.';
+      }
+    },
+    q3: {
+      oui: 'Très bien. Il vous reste probablement du budget disponible. On peut voir ensemble ce qui reste avant la fin d\'année.',
+      non: 'Vous avez des droits qui dorment depuis janvier. C\'est de l\'argent que vous avez cotisé — il vous appartient. Si vous ne l\'utilisez pas avant décembre, il est perdu.',
+      'sais-pas': 'La plupart des dirigeants ne le savent pas — c\'est normal. C\'est exactement ce qu\'on fait pour vous : on regarde, on monte le dossier, vous signez. C\'est tout.'
+    }
+  };
+
+  function buildClosing(){
+    var besoin = state.q2v && state.q2v !== 'un sujet à définir ensemble' ? state.q2v : '';
+    return 'Je peux regarder vos droits OPCO disponibles' + (besoin ? ' et vous préparer une proposition sur ' + besoin : '') + '. Je vous rappelle à votre convenance.';
+  }
+
+  function buildSummary(result){
+    var lines = [];
+    var lblQ1 = {oui:'A formé en 2026', non:'N\'a pas formé en 2026', prevision:'Formation en prévision'};
+    var lblQ2 = {aucune:'Pas d\'idée de formation — à définir', idee:'Besoin identifié'};
+    var lblQ3 = {oui:'Budget OPCO utilisé', non:'Budget OPCO non utilisé', 'sais-pas':'Ne sait pas / OPCO non suivi'};
+    if(state.q1) lines.push('Formation 2026 : ' + (lblQ1[state.q1]||'') + (state.q1v && state.q1v !== state.q1 ? ' (' + state.q1v + ')' : ''));
+    if(state.q2) lines.push('Besoin : ' + (lblQ2[state.q2]||'') + (state.q2v && state.q2v !== 'un sujet à définir ensemble' ? ' — ' + state.q2v : ''));
+    if(state.q3) lines.push('OPCO : ' + (lblQ3[state.q3]||''));
+    if(result === 'ok') lines.push('Conclusion : Rappel convenu — vérifier droits OPCO');
+    if(result === 'refus') lines.push('Conclusion : Pas intéressé — rappel dans 2-3 mois');
+    return lines.join('\n');
+  }
+
+  function render(){
+    el.innerHTML = '';
+
+    // Progress dots
+    var prog = document.createElement('div');
+    prog.style.cssText = 'display:flex;gap:6px;margin-bottom:18px;';
+    ['Situation','Besoin','OPCO','Closing'].forEach(function(lbl,i){
+      var d2 = document.createElement('div');
+      d2.style.cssText = 'flex:1;height:3px;border-radius:2px;background:' + (i < state.step ? 'var(--accent)' : i === state.step ? '#a78bfa' : 'var(--border2)') + ';transition:background 0.3s;';
+      prog.appendChild(d2);
+    });
+    el.appendChild(prog);
+
+    if(state.step === 0) renderQ1();
+    else if(state.step === 1) renderQ2();
+    else if(state.step === 2) renderQ3();
+    else if(state.step === 3) renderClosing();
+    else if(state.step === 4) renderSummary();
+  }
+
+  function phraseBox(text){
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#12151f;border-left:4px solid #7F77DD;border-radius:0 8px 8px 0;padding:18px 22px;margin:14px 0;';
+    var t = document.createElement('div');
+    t.style.cssText = 'font-size:19px;font-weight:600;color:#e8e6ff;line-height:1.65;';
+    t.textContent = text;
+    var h = document.createElement('div');
+    h.style.cssText = 'font-size:10px;color:#534AB7;margin-top:8px;text-transform:uppercase;letter-spacing:0.08em;';
+    h.textContent = 'Lire à voix haute';
+    box.appendChild(t); box.appendChild(h);
+    return box;
+  }
+
+  function qLabel(txt){ var d2=document.createElement('div'); d2.style.cssText='font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;'; d2.textContent=txt; return d2; }
+  function qText(txt){ var d2=document.createElement('div'); d2.style.cssText='font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;line-height:1.5;'; d2.textContent=txt; return d2; }
+
+  function choiceRow(choices){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+    choices.forEach(function(c){
+      var btn = document.createElement('button');
+      btn.style.cssText = 'padding:10px 18px;border-radius:10px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.15s;';
+      btn.textContent = c.label;
+      if(c.sel) { btn.style.background='#EEEDFE'; btn.style.borderColor='#534AB7'; btn.style.color='#3C3489'; btn.style.fontWeight='600'; }
+      btn.onclick = c.action;
+      btn.onmouseover = function(){ if(!c.sel) this.style.background='var(--bg3)'; };
+      btn.onmouseout = function(){ if(!c.sel) this.style.background='var(--bg2)'; };
+      row.appendChild(btn);
+    });
+    return row;
+  }
+
+  function nextBtn(label, action){
+    var btn = document.createElement('button');
+    btn.style.cssText = 'margin-top:16px;padding:10px 22px;border-radius:8px;border:none;background:#534AB7;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;';
+    btn.textContent = label + ' →';
+    btn.onclick = action;
+    return btn;
+  }
+
+  function renderQ1(){
+    el.appendChild(qLabel('Étape 1 — Situation'));
+    el.appendChild(qText('Vous avez formé vos équipes cette année ?'));
+    var phrase = null;
+    var inp = null;
+    var nxt = null;
+
+    function update(val, v){
+      state.q1 = val; state.q1v = v || '';
+      if(phrase) phrase.remove(); if(inp) inp.remove(); if(nxt) nxt.remove();
+      var fn = PH.q1[val];
+      var txt = typeof fn === 'function' ? fn(v||'') : fn;
+      phrase = phraseBox(txt);
+      el.appendChild(phrase);
+      nxt = nextBtn('Suivant', function(){ state.step=1; render(); });
+      el.appendChild(nxt);
+    }
+
+    var choices = [
+      {label:'Oui', action:function(){ 
+        state.q1='oui';
+        if(phrase) phrase.remove(); if(inp) inp.remove(); if(nxt) nxt.remove();
+        inp = document.createElement('input');
+        inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
+        inp.placeholder='Sur quelle(s) formation(s) ?';
+        inp.oninput = function(){ if(this.value.length>1) update('oui', this.value); };
+        el.appendChild(inp); inp.focus();
+      }},
+      {label:'Non', action:function(){ update('non',''); }},
+      {label:'En prévision', action:function(){
+        state.q1='prevision';
+        if(phrase) phrase.remove(); if(inp) inp.remove(); if(nxt) nxt.remove();
+        inp = document.createElement('input');
+        inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
+        inp.placeholder='À quelle date prévue ?';
+        inp.oninput = function(){ if(this.value.length>1) update('prevision', this.value); };
+        el.appendChild(inp); inp.focus();
+      }}
+    ];
+    el.appendChild(choiceRow(choices));
+  }
+
+  function renderQ2(){
+    el.appendChild(qLabel('Étape 2 — Besoin'));
+    el.appendChild(qText('Sur quoi aimeriez-vous former vos équipes ?'));
+    var phrase = null; var inp = null; var nxt = null;
+
+    function update(val, v){
+      state.q2=val; state.q2v=v||'';
+      if(phrase) phrase.remove(); if(inp) inp.remove(); if(nxt) nxt.remove();
+      var fn=PH.q2[val]; var txt=typeof fn==='function'?fn(v||''):fn;
+      phrase=phraseBox(txt); el.appendChild(phrase);
+      nxt=nextBtn('Suivant',function(){ state.step=2; render(); });
+      el.appendChild(nxt);
+    }
+
+    var choices=[
+      {label:'Pas d\'idée', action:function(){ update('aucune','un sujet à définir ensemble'); }},
+      {label:'J\'ai une idée', action:function(){
+        state.q2='idee';
+        if(phrase) phrase.remove(); if(inp) inp.remove(); if(nxt) nxt.remove();
+        inp=document.createElement('input');
+        inp.style.cssText='width:100%;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-top:12px;box-sizing:border-box;font-family:inherit;';
+        inp.placeholder='Ex : commercial, Excel, management, IA...';
+        inp.oninput=function(){ if(this.value.length>1) update('idee',this.value); };
+        el.appendChild(inp); inp.focus();
+      }}
+    ];
+    el.appendChild(choiceRow(choices));
+  }
+
+  function renderQ3(){
+    el.appendChild(qLabel('Étape 3 — OPCO'));
+    el.appendChild(qText('Vous avez déjà utilisé votre budget OPCO cette année ?'));
+    var phrase=null; var nxt=null;
+
+    function update(val){
+      state.q3=val;
+      if(phrase) phrase.remove(); if(nxt) nxt.remove();
+      var fn=PH.q3[val]; phrase=phraseBox(typeof fn==='function'?fn(''):fn);
+      el.appendChild(phrase);
+      nxt=nextBtn('Suivant',function(){ state.step=3; render(); });
+      el.appendChild(nxt);
+    }
+
+    el.appendChild(choiceRow([
+      {label:'Oui', action:function(){ update('oui'); }},
+      {label:'Non', action:function(){ update('non'); }},
+      {label:'Je ne sais pas', action:function(){ update('sais-pas'); }}
+    ]));
+  }
+
+  function renderClosing(){
+    el.appendChild(qLabel('Étape 4 — Closing'));
+    el.appendChild(phraseBox(buildClosing()));
+    var phrase2=null; var nxt=null;
+    el.appendChild(choiceRow([
+      {label:'OK pour le rappel', action:function(){
+        if(phrase2) phrase2.remove(); if(nxt) nxt.remove();
+        phrase2=phraseBox('Parfait. Je regarde vos droits OPCO et je vous rappelle à votre convenance. Bonne journée !');
+        el.appendChild(phrase2);
+        nxt=nextBtn('Terminer',function(){ state.step=4; state._result='ok'; render(); });
+        el.appendChild(nxt);
+      }},
+      {label:'Pas intéressé', action:function(){
+        if(phrase2) phrase2.remove(); if(nxt) nxt.remove();
+        phrase2=phraseBox('Je comprends tout à fait. Si la situation évolue n\'hésitez pas. Bonne journée !');
+        el.appendChild(phrase2);
+        nxt=nextBtn('Terminer',function(){ state.step=4; state._result='refus'; render(); });
+        el.appendChild(nxt);
+      }}
+    ]));
+  }
+
+  function renderSummary(){
+    var result = state._result || 'ok';
+    el.appendChild(qLabel('Résumé de l\'appel'));
+
+    var summaryTxt = buildSummary(result);
+
+    // Boîte résultat colorée
+    var resBox = document.createElement('div');
+    resBox.style.cssText = result==='ok'
+      ? 'background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:10px;padding:14px 16px;margin-bottom:14px;'
+      : 'background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:10px;padding:14px 16px;margin-bottom:14px;';
+    var resTitle = document.createElement('div');
+    resTitle.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:4px;color:' + (result==='ok'?'#27500A':'#791F1F') + ';';
+    resTitle.textContent = result==='ok' ? 'Rappel convenu' : 'Prospect froid — mettre en veille';
+    var resBody = document.createElement('div');
+    resBody.style.cssText = 'font-size:12px;color:' + (result==='ok'?'#3B6D11':'#A32D2D') + ';';
+    resBody.textContent = result==='ok' ? 'Vérifier les droits OPCO avant de rappeler.' : 'Programmer un rappel dans 2 à 3 mois.';
+    resBox.appendChild(resTitle); resBox.appendChild(resBody);
+    el.appendChild(resBox);
+
+    // Zone texte modifiable
+    var label = document.createElement('div');
+    label.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;';
+    label.textContent = 'Note — modifier ou compléter avant d\'enregistrer';
+    el.appendChild(label);
+
+    var ta = document.createElement('textarea');
+    ta.value = summaryTxt;
+    ta.style.cssText = 'width:100%;min-height:100px;padding:10px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;';
+    el.appendChild(ta);
+
+    // Boutons action
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;';
+
+    var saveBtn = document.createElement('button');
+    saveBtn.style.cssText = 'padding:9px 18px;border-radius:8px;border:none;background:#534AB7;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;';
+    saveBtn.textContent = 'Enregistrer dans la fiche';
+    saveBtn.onclick = function(){
+      var txt = ta.value.trim();
+      if(!txt) return;
+      if(!fiche.actions) fiche.actions = [];
+      fiche.actions.push({date:now(), text:'Note d\'appel : ' + txt.replace(/\n/g,' | ')});
+      saveDB();
+      saveBtn.textContent = '✅ Enregistré';
+      saveBtn.style.background = '#2E7D32';
+      setTimeout(function(){ saveBtn.textContent='Enregistrer dans la fiche'; saveBtn.style.background='#534AB7'; }, 2000);
+    };
+
+    var clearBtn = document.createElement('button');
+    clearBtn.style.cssText = 'padding:9px 18px;border-radius:8px;border:0.5px solid var(--border2);background:transparent;color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;';
+    clearBtn.textContent = 'Effacer';
+    clearBtn.onclick = function(){ ta.value=''; };
+
+    var restartBtn = document.createElement('button');
+    restartBtn.style.cssText = 'padding:9px 18px;border-radius:8px;border:0.5px solid var(--border2);background:transparent;color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;';
+    restartBtn.textContent = 'Recommencer';
+    restartBtn.onclick = function(){ renderSpinScript(fiche); };
+
+    btnRow.appendChild(saveBtn); btnRow.appendChild(clearBtn); btnRow.appendChild(restartBtn);
+    el.appendChild(btnRow);
+  }
+
+  render();
 }
 </script>
 
