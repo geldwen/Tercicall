@@ -1843,31 +1843,17 @@ function openModal(mode, typeOrId) {
     const d = DB.find(x => x.id === typeOrId);
     if (d) {
       if (d.cat === 'particulier') { openModalPart('edit', typeOrId); return; }
-      document.getElementById('f-nom').value = d.nom || '';
-      document.getElementById('f-siret').value = d.siret || '';
-      document.getElementById('f-cat').value = d.cat || 'entreprise';
-      document.getElementById('f-marche').value = d.marche || 'opco';
-      document.getElementById('f-opco-nom').value = d.opcoNom || '';
-      document.getElementById('f-budget').value = d.budget || '';
-
-
-      document.getElementById('f-adresse').value = d.adresse || '';
-      document.getElementById('f-tel').value = d.tel || '';
-      document.getElementById('f-email').value = d.email || '';
-      document.getElementById('f-web').value = d.web || '';
-      document.getElementById('f-secteur').value = d.secteur || '';
-      if(document.getElementById('f-naf')) document.getElementById('f-naf').value = d.naf || '';
-      document.getElementById('f-salaries').value = d.salaries || '';
+      function sf(id, val){ var el=document.getElementById(id); if(el) el.value=val||''; }
+      sf('f-nom', d.nom); sf('f-siret', d.siret); sf('f-adresse', d.adresse);
+      sf('f-tel', d.tel); sf('f-email', d.email); sf('f-web', d.web);
+      sf('f-salaries', d.salaries); sf('f-notes', d.notes);
+      sf('f-idcc', d.idcc); sf('f-opco-idcc', d.opcoIdcc); sf('f-idcc-conv', d.convention);
+      var catEl = document.getElementById('f-cat'); if(catEl) catEl.value = d.cat || 'entreprise';
       initFStatusDrop(d.status || 'vierge');
-
-      document.getElementById('f-notes').value = d.notes || '';
     }
   } else {
-    ['f-nom','f-siret','f-adresse','f-tel','f-email','f-web','f-secteur','f-salaries','f-notes','f-opco-nom','f-budget'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f-cat').value = 'entreprise';
-    if(document.getElementById('f-naf')) document.getElementById('f-naf').value = '';
-    document.getElementById('f-marche').value = 'opco';
-
+    ['f-nom','f-siret','f-adresse','f-tel','f-email','f-web','f-salaries','f-notes','f-idcc','f-opco-idcc','f-idcc-conv'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    var catEl=document.getElementById('f-cat'); if(catEl) catEl.value='entreprise';
     initFStatusDrop('vierge');
   }
   document.getElementById('modalOverlay').classList.add('open');
