@@ -644,7 +644,8 @@ select.filter-sel:focus { border-color: var(--accent); }
           <div style="position:relative">
             <input type="text" id="filterSecteurInput" placeholder="Secteur..." autocomplete="off"
               style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 10px;font-size:12px;width:140px;font-family:inherit;outline:none"
-              oninput="onFilterSecteur(this.value)" onfocus="showSecteurDropdown()" onblur="setTimeout(()=>hideSecteurDropdown(),200)">
+              oninput="showSecteurDropdown()" onfocus="showSecteurDropdown()" onblur="setTimeout(()=>hideSecteurDropdown(),200)"
+              onkeydown="if(event.key==='Enter'){appliquerFiltreSecteur(this.value);this.blur();}">
             <div id="secteur-dropdown" style="display:none;position:absolute;top:100%;left:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;min-width:160px;max-height:200px;overflow-y:auto;z-index:500;margin-top:2px;box-shadow:0 4px 16px rgba(0,0,0,0.3)"></div>
           </div>
           <select id="filterTypeSelect" onchange="onFilterType(this.value)"
@@ -2008,25 +2009,21 @@ function saveFiche() {
 }
 
 function getFormData() {
+  function gv(id){ var el=document.getElementById(id); return el ? (el.tagName==='SELECT'?el.value:el.value.trim()) : ''; }
   return {
-    nom: document.getElementById('f-nom').value.trim(),
-    siret: document.getElementById('f-siret').value.trim(),
-    cat: document.getElementById('f-cat').value,
-    marche: document.getElementById('f-marche').value,
-    opcoNom: document.getElementById('f-opco-nom').value.trim(),
-    budget: document.getElementById('f-budget').value,
-
-
-    adresse: document.getElementById('f-adresse').value.trim(),
-    tel: document.getElementById('f-tel').value.trim(),
-    email: document.getElementById('f-email').value.trim(),
-    web: document.getElementById('f-web').value.trim(),
-    naf: (document.getElementById('f-naf') ? document.getElementById('f-naf').value.trim().toUpperCase() : ''),
-    secteur: document.getElementById('f-secteur').value.trim(),
-    salaries: document.getElementById('f-salaries').value.trim(),
-    status: document.getElementById('f-status').value,
-
-    notes: document.getElementById('f-notes').value.trim()
+    nom:     gv('f-nom'),
+    siret:   gv('f-siret'),
+    cat:     gv('f-cat'),
+    adresse: gv('f-adresse'),
+    tel:     gv('f-tel'),
+    email:   gv('f-email'),
+    web:     gv('f-web'),
+    salaries:gv('f-salaries'),
+    idcc:    gv('f-idcc'),
+    opcoIdcc:gv('f-opco-idcc'),
+    convention:gv('f-idcc-conv'),
+    status:  gv('f-status'),
+    notes:   gv('f-notes'),
   };
 }
 
@@ -3204,8 +3201,8 @@ function lookupSiret(){
     })
     .catch(function(){
       btn.disabled = false;
-      status.style.color='#e57373';
-      status.textContent='❌ Erreur réseau — vérifiez votre connexion';
+      status.style.color='var(--text3)';
+      status.textContent='';
     });
 }
 
