@@ -3381,7 +3381,9 @@ function openMailTemplate(templateId, emailEnc, nomEnc) {
   var subject = t.subject;
   var body    = t.body(salutation);
   
-  var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  // Toujours ajouter contact@terciform.fr en expéditeur via authuser
+  var fromParam = '&authuser=contact%40terciform.fr';
+  var gmailUrl = 'https://mail.google.com/mail/?view=cm' + fromParam + '&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
   window.open(gmailUrl, '_blank');
   
   // Logger l'action dans l'historique
