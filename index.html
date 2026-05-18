@@ -629,12 +629,10 @@ select.filter-sel:focus { border-color: var(--accent); }
         <option value="">Trier par...</option>
         <option value="nom-asc">Société A→Z</option>
         <option value="nom-desc">Société Z→A</option>
+        <option value="secteur-asc">Secteur A→Z</option>
+        <option value="secteur-desc">Secteur Z→A</option>
         <option value="status-asc">Statut A→Z</option>
         <option value="status-desc">Statut Z→A</option>
-        <option value="rappel-asc">Rappel ↑ urgent</option>
-        <option value="lastcontact-asc">Dernier contact ↑ ancien</option>
-        <option value="date-desc">Créé récemment</option>
-        <option value="date-asc">Créé anciennement</option>
       </select>
       <div class="view-toggle">
         <button class="view-btn" id="vbtn-cards" onclick="setViewMode('cards')" title="Cartes">⊞</button>
@@ -1023,8 +1021,9 @@ function getFiltered() {
   else if (fSort === 'status-desc') list.sort((a,b) => statusOrder.indexOf(b.status) - statusOrder.indexOf(a.status));
   else if (fSort === 'date-desc') list.sort((a,b) => (b.created||'').localeCompare(a.created||''));
   else if (fSort === 'date-asc') list.sort((a,b) => (a.created||'').localeCompare(b.created||''));
+  else if (fSort === 'secteur-asc') list.sort((a,b) => (a.secteur||'').localeCompare(b.secteur||'', 'fr'));
+  else if (fSort === 'secteur-desc') list.sort((a,b) => (b.secteur||'').localeCompare(a.secteur||'', 'fr'));
   else if (fSort === 'rappel-asc') list.sort((a,b) => rappelDays(a) - rappelDays(b));
-  else if (fSort === 'lastcontact-asc') list.sort((a,b) => lcDays(b) - lcDays(a));
 
   // Filtre rappels du jour + retard
   if (window._rappelsJour) {
@@ -1105,7 +1104,7 @@ function renderRow(d) {
     <td style="width:28px;padding:6px 4px">${flagHtml(d.status)}</td>
     <td style="font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.cat==='particulier' && d.prenom ? d.prenom+' '+d.nom : d.nom}</td>
     <td style="color:var(--text2);font-size:11px;width:70px">${CATS[d.cat]||''}</td>
-    <td style="color:var(--text2);font-size:11px;width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.secteur||'—'}</td>
+    <td style="color:var(--text2);font-size:11px;width:100px;max-width:100px;word-break:break-word;line-height:1.3">${d.secteur||'—'}</td>
     <td style="color:var(--text2);font-size:11px;width:110px;white-space:nowrap">${d.tel||'—'}</td>
     <td style="font-size:11px;color:var(--text2);max-width:130px;overflow:hidden">${(()=>{const la=(d.actions||[]).slice().reverse().find(a=>!a.text.startsWith('Statut')&&!a.text.includes('programm')&&!a.text.includes('Planifi')&&!a.text.includes('planifi'));if(!la)return'<span style="color:var(--text3)">—</span>';const ic=actionIcon(la.text);return'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">'+(ic?ic+' ':'')+la.text+'</div><div style="font-size:10px;color:var(--text3);margin-top:1px">'+la.date+'</div>';})()}</td>
     <td style="min-width:140px;max-width:200px">${rappelHtml(d)}</td>
