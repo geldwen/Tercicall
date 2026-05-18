@@ -1028,7 +1028,18 @@ function getFiltered() {
 
   // Filtre rappels du jour + retard
   if (window._rappelsJour) {
-    list = list.filter(d => d.rappel && d.rappel.date && rappelDays(d) <= 0);
+    if(window._rappelFilter === 'rouge') {
+      list = list.filter(d => d.rappel && d.rappel.date && rappelDays(d) < 0);
+      // Du plus vieux au plus récent
+      list.sort(function(a,b){ return rappelTimestamp(a) - rappelTimestamp(b); });
+    } else if(window._rappelFilter === 'vert') {
+      list = list.filter(d => d.rappel && d.rappel.date && rappelDays(d) === 0);
+      // Du plus tôt au plus tard dans la journée
+      list.sort(function(a,b){ return rappelTimestamp(a) - rappelTimestamp(b); });
+    } else {
+      list = list.filter(d => d.rappel && d.rappel.date && rappelDays(d) <= 0);
+      list.sort(function(a,b){ return rappelTimestamp(a) - rappelTimestamp(b); });
+    }
   }
 
   return list;
@@ -1595,6 +1606,19 @@ function autoFlag(d) {
 
 
 function todayStr(){return new Date().toISOString().slice(0,10);}
+function rappelTimestamp(d){
+  if(!d.rappel||!d.rappel.date) return 9999999999999;
+  var months={'janvier':0,'février':1,'mars':2,'avril':3,'mai':4,'juin':5,'juillet':6,'août':7,'septembre':8,'octobre':9,'novembre':10,'décembre':11};
+  var str=d.rappel.date;
+  var parts=str.split(' ');
+  var day=parseInt(parts[0]); var month=months[parts[1]]; var year=parseInt(parts[2]);
+  var hours=0, mins=0;
+  var heureIdx=str.indexOf('à ');
+  if(heureIdx>=0){ var hParts=str.substring(heureIdx+2).split('h'); hours=parseInt(hParts[0])||0; mins=parseInt(hParts[1])||0; }
+  if(!isNaN(day)&&month!==undefined&&!isNaN(year)) return new Date(year,month,day,hours,mins).getTime();
+  return 9999999999999;
+}
+
 function rappelDays(d){
   if(!d.rappel||!d.rappel.date)return 99999;
   var months={'janvier':0,'f\u00e9vrier':1,'mars':2,'avril':3,'mai':4,'juin':5,'juillet':6,'ao\u00fbt':7,'septembre':8,'octobre':9,'novembre':10,'d\u00e9cembre':11};
@@ -1627,11 +1651,30 @@ function updateRdjBadge(){
   if(verts===0&&rouges===0){badge.style.display='none';return;}
   badge.style.display='inline-flex';
   var html='';
-  if(verts>0) html+='<span style="background:#43a047;color:white;border-radius:10px;padding:1px 7px;font-weight:700">'+verts+'</span>';
-  if(rouges>0) html+='<span style="background:#e53935;color:white;border-radius:10px;padding:1px 7px;font-weight:700">'+rouges+'</span>';
+  if(verts>0) html+='<span onclick="event.stopPropagation();filterRappels(\'vert\')" title="Rappels du jour" style="background:' + (window._rappelFilter==='vert'?'#2e7d32':'#43a047') + ';color:white;border-radius:10px;padding:1px 7px;font-weight:700;cursor:pointer">'+verts+'</span>';
+  if(rouges>0) html+='<span onclick="event.stopPropagation();filterRappels(\'rouge\')" title="Rappels en retard" style="background:' + (window._rappelFilter==='rouge'?'#b71c1c':'#e53935') + ';color:white;border-radius:10px;padding:1px 7px;font-weight:700;cursor:pointer">'+rouges+'</span>';
   badge.innerHTML=html;
 }
-function toggleRappelsJour(){window._rappelsJour=!window._rappelsJour;var b=document.getElementById('btn-rdj');if(b){b.style.background=window._rappelsJour?'rgba(255,152,0,.15)':'';b.style.borderColor=window._rappelsJour?'#ff9800':'';b.style.color=window._rappelsJour?'#ff9800':'';}renderList();}
+function toggleRappelsJour(){ window._rappelsJour = !window._rappelsJour; if(!window._rappelsJour) window._rappelFilter = null; var b=document.getElementById('btn-rdj'); if(b){b.style.background=window._rappelsJour?'rgba(255,152,0,.15)':'';b.style.borderColor=window._rappelsJour?'#ff9800':'';b.style.color=window._rappelsJour?'#ff9800':'';} renderList(); }
+
+function filterRappels(type) {
+  // type = 'rouge' | 'vert' | null
+  if(window._rappelFilter === type) {
+    // Désactiver si même filtre
+    window._rappelFilter = null;
+    window._rappelsJour = false;
+  } else {
+    window._rappelFilter = type;
+    window._rappelsJour = true;
+  }
+  var b = document.getElementById('btn-rdj');
+  if(b) {
+    b.style.background = window._rappelsJour ? 'rgba(255,152,0,.15)' : '';
+    b.style.borderColor = window._rappelsJour ? '#ff9800' : '';
+    b.style.color = window._rappelsJour ? '#ff9800' : '';
+  }
+  renderList();
+}
 function buildRappelHtml(d){
   var st=rappelStatus(d);
   var stLabel='';
