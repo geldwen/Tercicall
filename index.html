@@ -4066,9 +4066,8 @@ function renderUserStatsContent(prenom, connLog) {
   var prenomLow = prenom.toLowerCase();
   DB.forEach(function(fiche) {
     (fiche.actions||[]).forEach(function(a) {
-      // Filtrer par auteur — si author existe, vérifier; sinon ignorer (ancien)
+      // Filtrer par auteur — si author existe on vérifie, sinon on compte quand même
       if(a.author && a.author.toLowerCase() !== prenomLow) return;
-      if(!a.author) return; // Ignorer les anciennes actions sans auteur
       var d=parseD(a.date); if(!d) return;
       var t=(a.text||'').toLowerCase();
       var isT=d.toISOString().slice(0,10)===today, isW=d>=weekStart, isM=d>=monthStart;
